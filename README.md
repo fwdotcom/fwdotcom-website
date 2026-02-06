@@ -1,6 +1,9 @@
 # www.frankwinter.com Webseite
 In diesem Repository wird die Webseite www.frankwinter.com verwaltet.
 
+### Aufruf der Webseite
+Die Webseite ist über die URL [www.frankwinter.com](https://www.frankwinter.com) erreichbar. Mittels Parameter `?sleeping` kann die Seite in den „Sleeping Mode“ versetzt werden, um das Bild, welches im Normalbetrieb zwischen 22:00 und 06:00 Uhr angezeigt wird, auch tagsüber zu sehen.
+
 ### Deployment auf den Webserver
 Mittels der Action „Deploy on Web Server“ wird die Webseite aus dem Verzeichnis `www/` auf den Webserver beim Webhoster (Webgo) übertragen.
 
