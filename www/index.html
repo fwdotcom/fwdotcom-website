@@ -43,7 +43,12 @@
                 'images/clay_frank_idea.jpg',
                 'images/clay_frank_looking_at_keyboard.jpg',
                 'images/clay_frank_smiling.jpg',
-                'images/clay_frank_thinking.jpg'
+                'images/clay_frank_thinking.jpg',
+                'images/clay_frank_facepalm.jpg',
+                'images/clay_frank_grimacing_face.jpg',
+                'images/clay_frank_hands_up.jpg',
+                'images/clay_frank_rolling_eyes.jpg',
+                'images/clay_frank_winking_face.jpg'
             ];
             
             // Alle Bilder vorladen
@@ -96,16 +101,16 @@
                 const randomVariant = imgVariants[Math.floor(Math.random() * imgVariants.length)];
                 portrait.src = randomVariant;
                 
-                // Nach ~2 Sekunden zurück zum Basisbild
+                // Nach ~1,5 Sekunden zurück zum Basisbild
                 setTimeout(() => {
                     isShowingVariant = false;
                     if (!isSleepTime()) {
                         portrait.src = imgBase;
                     }
                     
-                    // Nächste Variante in 5-10 Sekunden
-                    variantTimeout = setTimeout(showRandomVariant, 5000 + Math.random() * 5000);
-                }, 1800 + Math.random() * 400);
+                    // Nächste Variante in 4-8 Sekunden
+                    variantTimeout = setTimeout(showRandomVariant, 4000 + Math.random() * 4000);
+                }, 1400 + Math.random() * 200);
             }
             
             // Schlafmodus prüfen und aktualisieren
