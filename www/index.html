@@ -33,30 +33,99 @@
 
     <script>
         (function() {
-            const imgOpenEyes = 'images/clay_frank.jpg';
-            const imgClosedEyes = 'images/clay_frank_closed_eyes.jpg';
             const portrait = document.getElementById('frank-portrait');
             
-            // Bilder vorladen für flüssige Übergänge
-            const preloadClosed = new Image();
-            preloadClosed.src = imgClosedEyes;
+            // Alle Bilder
+            const imgBase = 'images/clay_frank.jpg';
+            const imgClosedEyes = 'images/clay_frank_closed_eyes.jpg';
+            const imgSleeping = 'images/clay_frank_sleeping.jpg';
+            const imgVariants = [
+                'images/clay_frank_idea.jpg',
+                'images/clay_frank_looking_at_keyboard.jpg',
+                'images/clay_frank_smiling.jpg',
+                'images/clay_frank_thinking.jpg'
+            ];
             
+            // Alle Bilder vorladen
+            [imgBase, imgClosedEyes, imgSleeping, ...imgVariants].forEach(src => {
+                const img = new Image();
+                img.src = src;
+            });
+            
+            let isShowingVariant = false;
+            let blinkTimeout = null;
+            let variantTimeout = null;
+            
+            // Query-Parameter für Testzwecke prüfen
+            const urlParams = new URLSearchParams(window.location.search);
+            const forceSleep = urlParams.has('sleeping');
+            
+            // Prüft ob Schlafenszeit (22:00 - 06:00) oder per Query erzwungen
+            function isSleepTime() {
+                if (forceSleep) return true;
+                const hour = new Date().getHours();
+                return hour >= 22 || hour < 6;
+            }
+            
+            // Blinzel-Funktion
             function blink() {
-                // Augen schließen
+                if (isSleepTime() || isShowingVariant) {
+                    blinkTimeout = setTimeout(blink, 2000 + Math.random() * 4000);
+                    return;
+                }
+                
                 portrait.src = imgClosedEyes;
                 
-                // Nach kurzer Zeit (150-200ms) wieder öffnen
                 setTimeout(() => {
-                    portrait.src = imgOpenEyes;
-                    
-                    // Nächstes Blinzeln planen (2-6 Sekunden)
-                    const nextBlink = 2000 + Math.random() * 4000;
-                    setTimeout(blink, nextBlink);
+                    if (!isSleepTime() && !isShowingVariant) {
+                        portrait.src = imgBase;
+                    }
+                    blinkTimeout = setTimeout(blink, 2000 + Math.random() * 4000);
                 }, 150 + Math.random() * 50);
             }
             
-            // Erstes Blinzeln nach 1-3 Sekunden starten
+            // Zufällige Varianten anzeigen
+            function showRandomVariant() {
+                if (isSleepTime()) {
+                    variantTimeout = setTimeout(showRandomVariant, 10000);
+                    return;
+                }
+                
+                // Variante anzeigen
+                isShowingVariant = true;
+                const randomVariant = imgVariants[Math.floor(Math.random() * imgVariants.length)];
+                portrait.src = randomVariant;
+                
+                // Nach ~2 Sekunden zurück zum Basisbild
+                setTimeout(() => {
+                    isShowingVariant = false;
+                    if (!isSleepTime()) {
+                        portrait.src = imgBase;
+                    }
+                    
+                    // Nächste Variante in 5-10 Sekunden
+                    variantTimeout = setTimeout(showRandomVariant, 5000 + Math.random() * 5000);
+                }, 1800 + Math.random() * 400);
+            }
+            
+            // Schlafmodus prüfen und aktualisieren
+            function updateSleepMode() {
+                if (isSleepTime()) {
+                    portrait.src = imgSleeping;
+                } else if (!isShowingVariant) {
+                    portrait.src = imgBase;
+                }
+            }
+            
+            // Initial prüfen
+            updateSleepMode();
+            
+            // Jede Minute Schlafmodus prüfen
+            setInterval(updateSleepMode, 60000);
+            
+            // Animationen starten
             setTimeout(blink, 1000 + Math.random() * 2000);
+            setTimeout(showRandomVariant, 3000 + Math.random() * 5000);
         })();
     </script>
 </body>
