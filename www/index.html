@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="site.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>www.frankwinter.com</title>
-    <link rel="stylesheet" href="style.css?vx">
 </head>
 <body>
     <div class="profile-section">
         <div class="blink-container">
-            <div id="frank-portrait" class="portrait-bg" draggable="false" style="-webkit-user-select:none;user-select:none;"></div>
+            <img id="frank-portrait" src="images/clay_frank.webp" alt="Frank Winter" draggable="false">
+            <div class="portrait-overlay" tabindex="0"></div>
         </div>
         <h1 class="headline">Hi, I'm Frank.</h1>
         <p class="description">IT security professional, open-source advocate, 
@@ -34,10 +35,12 @@
     <script>
         (function() {
             const portrait = document.getElementById('frank-portrait');
+            const overlay = document.querySelector('.portrait-overlay');
             // Kontextmenü und Draggen auf mobilen Geräten unterbinden
-            portrait.addEventListener('contextmenu', function(e) { e.preventDefault(); });
-            portrait.addEventListener('dragstart', function(e) { e.preventDefault(); });
-            
+            overlay.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+            overlay.addEventListener('dragstart', function(e) { e.preventDefault(); });
+            overlay.style.cursor = 'pointer';
+
             // Alle Bilder (nur noch WebP)
             const imgBase = 'images/clay_frank.webp';
             const imgClosedEyes = 'images/clay_frank_closed_eyes.webp';
@@ -58,141 +61,101 @@
                 'images/clay_frank_tilting_head.webp',
                 'images/clay_frank_thinking.webp'
             ];
-            
             // Basisbild zuerst vorladen
             const baseImg = new Image();
             baseImg.src = imgBase;
-            
-            // Andere Bilder verzögert im Hintergrund vorladen
             baseImg.onload = function() {
                 [imgClosedEyes, imgSleeping, ...imgVariants].forEach(src => {
                     const img = new Image();
                     img.src = src;
                 });
             };
-            
             let isShowingVariant = false;
             let isHolding = false;
             let blinkTimeout = null;
             let variantTimeout = null;
-            
             // Query-Parameter für Testzwecke prüfen
             const urlParams = new URLSearchParams(window.location.search);
             const forceSleep = urlParams.has('sleeping');
             const forceAwake = urlParams.has('awake');
-            
-            // Prüft ob Schlafenszeit (22:00 - 06:00) oder per Query erzwungen
             function isSleepTime() {
                 if (forceAwake) return false;
                 if (forceSleep) return true;
                 const hour = new Date().getHours();
                 return hour >= 22 || hour < 6;
             }
-            
-            // Blinzel-Funktion
             function blink() {
                 if (isSleepTime() || isShowingVariant || isHolding) {
                     blinkTimeout = setTimeout(blink, 2000 + Math.random() * 4000);
                     return;
                 }
-                
                 portrait.src = imgClosedEyes;
-                    portrait.style.backgroundImage = `url('${imgClosedEyes}')`;
-                
                 setTimeout(() => {
                     if (!isSleepTime() && !isShowingVariant && !isHolding) {
                         portrait.src = imgBase;
-                            portrait.style.backgroundImage = `url('${imgBase}')`;
                     }
                     blinkTimeout = setTimeout(blink, 2000 + Math.random() * 4000);
                 }, 150 + Math.random() * 50);
             }
-            
-            // Zufällige Varianten anzeigen
             function showRandomVariant() {
                 if (isSleepTime() || isHolding) {
                     variantTimeout = setTimeout(showRandomVariant, 10000);
                     return;
                 }
-                
-                // Variante anzeigen
                 isShowingVariant = true;
                 const randomVariant = imgVariants[Math.floor(Math.random() * imgVariants.length)];
                 portrait.src = randomVariant;
-                    portrait.style.backgroundImage = `url('${randomVariant}')`;
-                
-                // Nach ~1,5 Sekunden zurück zum Basisbild
                 setTimeout(() => {
                     isShowingVariant = false;
                     if (!isSleepTime() && !isHolding) {
                         portrait.src = imgBase;
-                            portrait.style.backgroundImage = `url('${imgBase}')`;
                     }
-                    
-                    // Nächste Variante in 4-8 Sekunden
                     variantTimeout = setTimeout(showRandomVariant, 4000 + Math.random() * 4000);
                 }, 1400 + Math.random() * 200);
             }
-            
-            // Schlafmodus prüfen und aktualisieren
             function updateSleepMode() {
                 if (isHolding) return;
                 if (isSleepTime()) {
                     portrait.src = imgSleeping;
-                        portrait.style.backgroundImage = `url('${imgSleeping}')`;
                 } else if (!isShowingVariant) {
-                    portrait.style.backgroundImage = `url('${imgBase}')`;
+                    portrait.src = imgBase;
                 }
             }
-            
-            // Initial prüfen
             updateSleepMode();
-            
-            // Jede Minute Schlafmodus prüfen
             setInterval(updateSleepMode, 60000);
-            
-            // Animationen starten
             setTimeout(blink, 1000 + Math.random() * 2000);
             setTimeout(showRandomVariant, 3000 + Math.random() * 5000);
-            
-            // Klick/Touch-Interaktion
-            portrait.style.cursor = 'pointer';
-            
-
             function startHold(e) {
                 e.preventDefault();
                 if (isSleepTime()) {
-                    // Im Schlafmodus sleeping_open_eyes zeigen
-                        portrait.style.backgroundImage = `url('${imgSleepingOpenEyes}')`;
+                    portrait.src = imgSleepingOpenEyes;
                     isHolding = true;
                     return;
                 }
                 isHolding = true;
-                // Nur neues Bild wählen, wenn nicht bereits eine Variante angezeigt wird
                 if (!isShowingVariant) {
                     isShowingVariant = true;
                     const randomVariant = imgVariants[Math.floor(Math.random() * imgVariants.length)];
-                        portrait.style.backgroundImage = `url('${randomVariant}')`;
+                    portrait.src = randomVariant;
                 }
             }
-            
             function endHold() {
                 if (!isHolding) return;
                 isHolding = false;
                 isShowingVariant = false;
                 if (isSleepTime()) {
-                    portrait.style.backgroundImage = `url('${imgSleeping}')`;
+                    portrait.src = imgSleeping;
                 } else {
-                    portrait.style.backgroundImage = `url('${imgBase}')`;
+                    portrait.src = imgBase;
                 }
             }
-            
-            portrait.addEventListener('mousedown', startHold);
-            portrait.addEventListener('mouseup', endHold);
-            portrait.addEventListener('mouseleave', endHold);
-            portrait.addEventListener('touchstart', startHold, { passive: false });
-            portrait.addEventListener('touchend', endHold);
-            portrait.addEventListener('touchcancel', endHold);
+            overlay.addEventListener('mousedown', startHold);
+            overlay.addEventListener('mouseup', endHold);
+            overlay.addEventListener('mouseleave', endHold);
+            overlay.addEventListener('touchstart', startHold, { passive: false });
+            overlay.addEventListener('touchend', endHold);
+            overlay.addEventListener('touchcancel', endHold);
         })();
     </script>
 </body>
+</html>
