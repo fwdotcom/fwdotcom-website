@@ -1,8 +1,8 @@
 # Cache-Control Headers
 <IfModule mod_headers.c>
-    # Bilder: 1 Jahr cachen
+    # Bilder: 1 Monat cachen
     <FilesMatch "\.(jpg|jpeg|png|gif|ico|webp|svg)$">
-        Header set Cache-Control "max-age=31536000, public"
+        Header set Cache-Control "max-age=2592000, public"
     </FilesMatch>
 
     # CSS: 1 Monat cachen
@@ -15,7 +15,7 @@
         Header set Cache-Control "max-age=2592000, public"
     </FilesMatch>
 
-    # HTML: Kurz cachen, immer revalidieren
+    # HTML: 1 Stunde cachen, immer revalidieren
     <FilesMatch "\.(html|htm)$">
         Header set Cache-Control "max-age=3600, must-revalidate"
     </FilesMatch>
@@ -25,11 +25,11 @@
 <IfModule mod_expires.c>
     ExpiresActive On
     ExpiresDefault "access plus 1 month"
-    ExpiresByType image/jpeg "access plus 1 year"
-    ExpiresByType image/png "access plus 1 year"
-    ExpiresByType image/gif "access plus 1 year"
-    ExpiresByType image/webp "access plus 1 year"
-    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType image/webp "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
     ExpiresByType image/x-icon "access plus 1 year"
     ExpiresByType text/css "access plus 1 month"
     ExpiresByType application/javascript "access plus 1 month"
