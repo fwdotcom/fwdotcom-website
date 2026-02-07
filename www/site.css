@@ -27,10 +27,6 @@ body {
     transition: background-color 0.25s ease;
 }
 
-.blink-container:hover {
-    background: #e07c4a;
-}
-
 .blink-container img#frank-portrait {
     display: block;
     width: 300px;
@@ -103,6 +99,12 @@ img#frank-portrait {
     color: #e07c4a;
 }
 
+@media (min-width: 769px) {
+    .blink-container:hover {
+        background: #e07c4a;
+    }
+}
+
 @media (max-width: 768px) {
     .blink-container img#frank-portrait,
     .portrait-overlay {
@@ -117,6 +119,10 @@ img#frank-portrait {
     .description {
         font-size: 1rem;
         padding: 0 30px;
+    }
+
+    .blink-container:active {
+        background: #e07c4a;
     }
 }
 
