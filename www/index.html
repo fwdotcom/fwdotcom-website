@@ -35,7 +35,9 @@
     <script>
         (function() {
             const portrait = document.getElementById('frank-portrait');
-            const overlay = document.querySelector('.portrait-overlay');
+
+            // const overlay = document.querySelector('.portrait-overlay');
+            const overlay = document.querySelector('.blink-container');
             // Kontextmenü und Draggen auf mobilen Geräten unterbinden
             overlay.addEventListener('contextmenu', function(e) { e.preventDefault(); });
             overlay.addEventListener('dragstart', function(e) { e.preventDefault(); });
