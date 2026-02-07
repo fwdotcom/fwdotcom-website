@@ -25,6 +25,7 @@ body {
     border-radius: 50%;
     background: linear-gradient(135deg, #666 0%, #999 50%, #666 100%);
 }
+
 .blink-container img#frank-portrait {
     display: block;
     width: 300px;
@@ -36,6 +37,11 @@ body {
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
 }
+
+img#frank-portrait {
+    pointer-events: none;
+}
+
 .portrait-overlay {
     position: absolute;
     top: 0;
@@ -50,12 +56,14 @@ body {
     -webkit-tap-highlight-color: transparent;
     cursor: pointer;
 }
+
 .headline {
     color: #fff;
     font-size: 2.5rem;
     margin-top: 45px;
     margin-bottom: 25px;
 }
+
 .description {
     color: #aaa;
     font-size: 1.1rem;
@@ -64,63 +72,77 @@ body {
     line-height: 1.6;
     padding: 0 20px;
 }
+
 .description a {
     color: #e07c4a;
     text-decoration: none;
     transition: color 0.2s ease;
 }
+
 .description a:hover {
     color: #f0a070;
 }
+
 .social-links {
     display: flex;
     gap: 20px;
     margin-top: 50px;
 }
+
 .social-links a {
     color: #888;
     transition: color 0.2s ease;
 }
+
 .social-links a:hover {
     color: #e07c4a;
 }
+
 @media (max-width: 768px) {
     .blink-container img#frank-portrait,
     .portrait-overlay {
         width: 250px;
         height: 250px;
     }
+
     .headline {
         font-size: 2rem;
     }
+
     .description {
         font-size: 1rem;
         padding: 0 30px;
     }
 }
+
 @media (max-width: 480px) {
     .blink-container {
         padding: 5px;
     }
+
     .blink-container img#frank-portrait,
     .portrait-overlay {
         width: 260px;
         height: 260px;
     }
+
     .headline {
         font-size: 1.6rem;
         margin-top: 55px;
         margin-bottom: 30px;
     }
+
     .description {
         font-size: 0.95rem;
         padding: 0 20px;
         line-height: 1.5;
     }
+
     .social-links {
         gap: 25px;
         margin-top: 50px;
     }
+
     .social-links a svg {
         width: 22px;
         height: 22px;
