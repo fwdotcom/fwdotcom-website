@@ -23,7 +23,12 @@ body {
     display: inline-block;
     padding: 6px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #666 0%, #999 50%, #666 100%);
+    background: #666;
+    transition: background-color 0.25s ease;
+}
+
+.blink-container:hover {
+    background: #e07c4a;
 }
 
 .blink-container img#frank-portrait {
