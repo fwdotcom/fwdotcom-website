@@ -58,15 +58,18 @@
             });
             
             let isShowingVariant = false;
+            let isHolding = false;
             let blinkTimeout = null;
             let variantTimeout = null;
             
             // Query-Parameter für Testzwecke prüfen
             const urlParams = new URLSearchParams(window.location.search);
             const forceSleep = urlParams.has('sleeping');
+            const forceAwake = urlParams.has('awake');
             
             // Prüft ob Schlafenszeit (22:00 - 06:00) oder per Query erzwungen
             function isSleepTime() {
+                if (forceAwake) return false;
                 if (forceSleep) return true;
                 const hour = new Date().getHours();
                 return hour >= 22 || hour < 6;
@@ -74,7 +77,7 @@
             
             // Blinzel-Funktion
             function blink() {
-                if (isSleepTime() || isShowingVariant) {
+                if (isSleepTime() || isShowingVariant || isHolding) {
                     blinkTimeout = setTimeout(blink, 2000 + Math.random() * 4000);
                     return;
                 }
@@ -82,7 +85,7 @@
                 portrait.src = imgClosedEyes;
                 
                 setTimeout(() => {
-                    if (!isSleepTime() && !isShowingVariant) {
+                    if (!isSleepTime() && !isShowingVariant && !isHolding) {
                         portrait.src = imgBase;
                     }
                     blinkTimeout = setTimeout(blink, 2000 + Math.random() * 4000);
@@ -91,7 +94,7 @@
             
             // Zufällige Varianten anzeigen
             function showRandomVariant() {
-                if (isSleepTime()) {
+                if (isSleepTime() || isHolding) {
                     variantTimeout = setTimeout(showRandomVariant, 10000);
                     return;
                 }
@@ -104,7 +107,7 @@
                 // Nach ~1,5 Sekunden zurück zum Basisbild
                 setTimeout(() => {
                     isShowingVariant = false;
-                    if (!isSleepTime()) {
+                    if (!isSleepTime() && !isHolding) {
                         portrait.src = imgBase;
                     }
                     
@@ -115,6 +118,7 @@
             
             // Schlafmodus prüfen und aktualisieren
             function updateSleepMode() {
+                if (isHolding) return;
                 if (isSleepTime()) {
                     portrait.src = imgSleeping;
                 } else if (!isShowingVariant) {
@@ -131,6 +135,38 @@
             // Animationen starten
             setTimeout(blink, 1000 + Math.random() * 2000);
             setTimeout(showRandomVariant, 3000 + Math.random() * 5000);
+            
+            // Klick/Touch-Interaktion
+            portrait.style.cursor = 'pointer';
+            
+            function startHold(e) {
+                e.preventDefault();
+                isHolding = true;
+                // Nur neues Bild wählen, wenn nicht bereits eine Variante angezeigt wird
+                if (!isShowingVariant) {
+                    isShowingVariant = true;
+                    const randomVariant = imgVariants[Math.floor(Math.random() * imgVariants.length)];
+                    portrait.src = randomVariant;
+                }
+            }
+            
+            function endHold() {
+                if (!isHolding) return;
+                isHolding = false;
+                isShowingVariant = false;
+                if (isSleepTime()) {
+                    portrait.src = imgSleeping;
+                } else {
+                    portrait.src = imgBase;
+                }
+            }
+            
+            portrait.addEventListener('mousedown', startHold);
+            portrait.addEventListener('mouseup', endHold);
+            portrait.addEventListener('mouseleave', endHold);
+            portrait.addEventListener('touchstart', startHold, { passive: false });
+            portrait.addEventListener('touchend', endHold);
+            portrait.addEventListener('touchcancel', endHold);
         })();
     </script>
 </body>
