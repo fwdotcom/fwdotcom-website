@@ -9,7 +9,7 @@
 <body>
     <div class="profile-section">
         <div class="blink-container">
-            <img id="frank-portrait" src="images/clay_frank.webp" alt="Frank Winter">
+            <img id="frank-portrait" src="images/clay_frank.webp" alt="Frank Winter" draggable="false" style="-webkit-user-select:none;user-select:none;">
         </div>
         <h1 class="headline">Hi, I'm Frank.</h1>
         <p class="description">IT security professional, open-source advocate, 
@@ -34,6 +34,9 @@
     <script>
         (function() {
             const portrait = document.getElementById('frank-portrait');
+            // Kontextmenü und Draggen auf mobilen Geräten unterbinden
+            portrait.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+            portrait.addEventListener('dragstart', function(e) { e.preventDefault(); });
             
             // Alle Bilder (nur noch WebP)
             const imgBase = 'images/clay_frank.webp';
