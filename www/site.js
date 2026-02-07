@@ -1,19 +1,18 @@
-// Aktiviert dreimal die .highlight-Klasse im blink-container nach vollständigem Laden
-window.addEventListener('DOMContentLoaded', function() {
-	const blink = document.querySelector('.blink-container');
-  	if (!blink) return;
+// Aktiviert die .highlight-Klasse im blink-container nach vollständigem Laden einmalig
 
-  	let count = 0;
-  	function toggleHighlight() {
-		if (count >= 2) return;
-		blink.classList.add('highlight');
+window.addEventListener('DOMContentLoaded', function() {
+	// Das Element mit der Klasse .blink-container wird gesucht
+	const blink = document.querySelector('.blink-container');
+	if (!blink) return; // Falls nicht vorhanden, nichts tun
+
+	// Funktion, die die Highlight-Klasse für 1 Sekunde setzt und dann wieder entfernt
+	function toggleHighlight() {
+		blink.classList.add('highlight'); // Highlight-Klasse hinzufügen
 		setTimeout(() => {
-	  		blink.classList.remove('highlight');
-	  		count++;
-	  		if (count < 2) {
-				setTimeout(toggleHighlight, 500);
-	  		}
-		}, 500);
-  	}
-  	setTimeout(toggleHighlight, 0);
+			blink.classList.remove('highlight'); // Highlight-Klasse entfernen
+		}, 1000);
+	}
+
+	// Startet die Animation direkt nach dem Laden der Seite
+	setTimeout(toggleHighlight, 0);
 });
