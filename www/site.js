@@ -5,12 +5,12 @@ window.addEventListener('DOMContentLoaded', function() {
 
   	let count = 0;
   	function toggleHighlight() {
-		if (count >= 3) return;
+		if (count >= 2) return;
 		blink.classList.add('highlight');
 		setTimeout(() => {
 	  		blink.classList.remove('highlight');
 	  		count++;
-	  		if (count < 3) {
+	  		if (count < 2) {
 				setTimeout(toggleHighlight, 500);
 	  		}
 		}, 500);

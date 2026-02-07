@@ -31,7 +31,7 @@ body {
 
 .highlight {
     background: #e07c4a;
-    box-shadow: 0 0 15px rgba(224, 124, 74, 0.7);
+    box-shadow: 0 0 15px rgba(224, 124, 74, 0.5);
 }
 
 .blink-container img#frank-portrait {
