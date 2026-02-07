@@ -24,7 +24,14 @@ body {
     padding: 6px;
     border-radius: 50%;
     background: #666;
-    transition: background-color 0.25s ease;
+    box-shadow: none;
+    transition: background-color 0.25s ease, box-shadow 0.25s ease;
+    cursor: pointer;
+}
+
+.highlight {
+    background: #e07c4a;
+    box-shadow: 0 0 15px rgba(224, 124, 74, 0.7);
 }
 
 .blink-container img#frank-portrait {
@@ -55,7 +62,6 @@ img#frank-portrait {
     outline: none !important;
     box-shadow: none !important;
     -webkit-tap-highlight-color: transparent;
-    cursor: pointer;
 }
 
 .headline {
@@ -99,12 +105,6 @@ img#frank-portrait {
     color: #e07c4a;
 }
 
-@media (min-width: 769px) {
-    .blink-container:hover {
-        background: #e07c4a;
-    }
-}
-
 @media (max-width: 768px) {
     .blink-container img#frank-portrait,
     .portrait-overlay {
@@ -119,10 +119,6 @@ img#frank-portrait {
     .description {
         font-size: 1rem;
         padding: 0 30px;
-    }
-
-    .blink-container:active {
-        background: #e07c4a;
     }
 }
 
