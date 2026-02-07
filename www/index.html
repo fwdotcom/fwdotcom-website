@@ -9,7 +9,7 @@
 <body>
     <div class="profile-section">
         <div class="blink-container">
-            <img id="frank-portrait" src="images/clay_frank.jpg" alt="Frank Winter">
+            <img id="frank-portrait" src="images/clay_frank.webp" alt="Frank Winter">
         </div>
         <h1 class="headline">Hi, I'm Frank.</h1>
         <p class="description">IT security professional, open-source advocate, 
@@ -35,24 +35,25 @@
         (function() {
             const portrait = document.getElementById('frank-portrait');
             
-            // Alle Bilder
-            const imgBase = 'images/clay_frank.jpg';
-            const imgClosedEyes = 'images/clay_frank_closed_eyes.jpg';
-            const imgSleeping = 'images/clay_frank_sleeping.jpg';
+            // Alle Bilder (nur noch WebP)
+            const imgBase = 'images/clay_frank.webp';
+            const imgClosedEyes = 'images/clay_frank_closed_eyes.webp';
+            const imgSleeping = 'images/clay_frank_sleeping.webp';
+            const imgSleepingOpenEyes = 'images/clay_frank_sleeping_open_eyes.webp';
             const imgVariants = [
-                'images/clay_frank_idea.jpg',
-                'images/clay_frank_looking_at_keyboard.jpg',
-                'images/clay_frank_smiling.jpg',
-                'images/clay_frank_sceptical.jpg',
-                'images/clay_frank_facepalm.jpg',
-                'images/clay_frank_grimacing_face.jpg',
-                'images/clay_frank_hands_up.jpg',
-                'images/clay_frank_rolling_eyes.jpg',
-                'images/clay_frank_winking_face.jpg',
-                'images/clay_frank_holding_mug.jpg',
-                'images/clay_frank_scratching_head.jpg',
-                'images/clay_frank_tilting_head.jpg',
-                'images/clay_frank_thinking.jpg'
+                'images/clay_frank_idea.webp',
+                'images/clay_frank_looking_at_keyboard.webp',
+                'images/clay_frank_smiling.webp',
+                'images/clay_frank_sceptical.webp',
+                'images/clay_frank_facepalm.webp',
+                'images/clay_frank_grimacing_face.webp',
+                'images/clay_frank_hands_up.webp',
+                'images/clay_frank_rolling_eyes.webp',
+                'images/clay_frank_winking_face.webp',
+                'images/clay_frank_holding_mug.webp',
+                'images/clay_frank_scratching_head.webp',
+                'images/clay_frank_tilting_head.webp',
+                'images/clay_frank_thinking.webp'
             ];
             
             // Basisbild zuerst vorladen
@@ -149,10 +150,15 @@
             // Klick/Touch-Interaktion
             portrait.style.cursor = 'pointer';
             
+
             function startHold(e) {
                 e.preventDefault();
-                // Im Schlafmodus keine Interaktion
-                if (isSleepTime()) return;
+                if (isSleepTime()) {
+                    // Im Schlafmodus sleeping_open_eyes zeigen
+                    portrait.src = imgSleepingOpenEyes;
+                    isHolding = true;
+                    return;
+                }
                 isHolding = true;
                 // Nur neues Bild wählen, wenn nicht bereits eine Variante angezeigt wird
                 if (!isShowingVariant) {

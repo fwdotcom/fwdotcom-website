@@ -1,8 +1,20 @@
 # www.frankwinter.com Webseite
 In diesem Repository wird die Webseite www.frankwinter.com verwaltet.
 
-### Aufruf der Webseite
-Die Webseite ist über die URL [www.frankwinter.com](https://www.frankwinter.com) erreichbar. Mittels Parameter `?sleeping` kann die Seite in den „Sleeping Mode“ versetzt werden, um das Bild, welches im Normalbetrieb zwischen 22:00 und 06:00 Uhr angezeigt wird, auch tagsüber zu sehen.
+### Funktionsbeschreibung
+Die Webseite [www.frankwinter.com](https://www.frankwinter.com) dient als persönliche Präsentationsseite.
+
+
+**Hauptfunktionen:**
+- Darstellung von Inhalten und Bildern im modernen, responsiven Design
+- Automatischer „Sleeping Mode“: Zwischen 22:00 und 06:00 Uhr wird ein spezielles Bild angezeigt (alternativ jederzeit über den URL-Parameter `?sleeping`)
+- Optimierte Bildauslieferung (WebP-Format)
+
+**Interaktive Funktionen:**
+- Mit dem URL-Parameter `?awake` kann der Sleeping Mode gezielt deaktiviert werden (unabhängig von der Uhrzeit).
+- Ein Klick oder längeres Halten auf das Portrait zeigt im Schlafmodus ein "wach"-Bild (sleeping_open_eyes) oder im Normalmodus eine zufällige Bildvariante an. Beim Loslassen kehrt das Bild zum Ausgangszustand zurück.
+
+Weitere Details zur Bildkonvertierung und zum Deployment finden sich weiter unten in dieser Datei.
 
 ### Deployment auf den Webserver
 Mittels der Action „Deploy on Web Server“ wird die Webseite aus dem Verzeichnis `www/` auf den Webserver beim Webhoster (Webgo) übertragen.
@@ -39,3 +51,24 @@ Der Ablauf auf dem Webserver ist dabei:
 
 Der Webserver vertraut damit dem **öffentlichen Schlüssel**, während der **private Schlüssel ausschließlich im GitHub Runner** verwendet wird.  
 Nur wenn **privater und öffentlicher Schlüssel korrekt zueinander passen**, ist eine SSH-Authentifizierung für das Deployment möglich.
+
+
+---
+
+### Bilder konvertieren (PNG → WebP)
+Um Bilder (z. B. für die Webseite) effizienter zu machen, können PNG-Dateien mit [ImageMagick](https://imagemagick.org/) in das WebP-Format konvertiert werden. Beispiel für eine Bash-Konvertierung aller PNGs in einem Ordner:
+
+```bash
+#!/bin/bash
+cd "/mnt/c/Users/Frank/Downloads/clay_frank"
+for f in *.png; do
+  echo "Converting: $f"
+  magick "$f" -resize 1000x1000! "${f%.png}.webp"
+done
+echo "Done!"
+```
+
+**Hinweis:**
+- Das Skript setzt voraus, dass [ImageMagick](https://imagemagick.org/) installiert ist und der Befehl `magick` verfügbar ist.
+- Die Option `-resize 1000x1000!` erzwingt die Größe 1000x1000 Pixel (ohne Seitenverhältnis zu erhalten).
+- Die konvertierten WebP-Dateien werden im gleichen Verzeichnis abgelegt.
