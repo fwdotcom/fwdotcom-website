@@ -151,6 +151,8 @@
             
             function startHold(e) {
                 e.preventDefault();
+                // Im Schlafmodus keine Interaktion
+                if (isSleepTime()) return;
                 isHolding = true;
                 // Nur neues Bild wählen, wenn nicht bereits eine Variante angezeigt wird
                 if (!isShowingVariant) {
