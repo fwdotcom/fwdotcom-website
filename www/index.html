@@ -9,7 +9,7 @@
 <body>
     <div class="profile-section">
         <div class="blink-container">
-            <img id="frank-portrait" src="images/clay_frank.webp" alt="Frank Winter" draggable="false" style="-webkit-user-select:none;user-select:none;">
+            <div id="frank-portrait" class="portrait-bg" draggable="false" style="-webkit-user-select:none;user-select:none;"></div>
         </div>
         <h1 class="headline">Hi, I'm Frank.</h1>
         <p class="description">IT security professional, open-source advocate, 
@@ -97,10 +97,12 @@
                 }
                 
                 portrait.src = imgClosedEyes;
+                    portrait.style.backgroundImage = `url('${imgClosedEyes}')`;
                 
                 setTimeout(() => {
                     if (!isSleepTime() && !isShowingVariant && !isHolding) {
                         portrait.src = imgBase;
+                            portrait.style.backgroundImage = `url('${imgBase}')`;
                     }
                     blinkTimeout = setTimeout(blink, 2000 + Math.random() * 4000);
                 }, 150 + Math.random() * 50);
@@ -117,12 +119,14 @@
                 isShowingVariant = true;
                 const randomVariant = imgVariants[Math.floor(Math.random() * imgVariants.length)];
                 portrait.src = randomVariant;
+                    portrait.style.backgroundImage = `url('${randomVariant}')`;
                 
                 // Nach ~1,5 Sekunden zurück zum Basisbild
                 setTimeout(() => {
                     isShowingVariant = false;
                     if (!isSleepTime() && !isHolding) {
                         portrait.src = imgBase;
+                            portrait.style.backgroundImage = `url('${imgBase}')`;
                     }
                     
                     // Nächste Variante in 4-8 Sekunden
@@ -135,8 +139,9 @@
                 if (isHolding) return;
                 if (isSleepTime()) {
                     portrait.src = imgSleeping;
+                        portrait.style.backgroundImage = `url('${imgSleeping}')`;
                 } else if (!isShowingVariant) {
-                    portrait.src = imgBase;
+                    portrait.style.backgroundImage = `url('${imgBase}')`;
                 }
             }
             
@@ -158,7 +163,7 @@
                 e.preventDefault();
                 if (isSleepTime()) {
                     // Im Schlafmodus sleeping_open_eyes zeigen
-                    portrait.src = imgSleepingOpenEyes;
+                        portrait.style.backgroundImage = `url('${imgSleepingOpenEyes}')`;
                     isHolding = true;
                     return;
                 }
@@ -167,7 +172,7 @@
                 if (!isShowingVariant) {
                     isShowingVariant = true;
                     const randomVariant = imgVariants[Math.floor(Math.random() * imgVariants.length)];
-                    portrait.src = randomVariant;
+                        portrait.style.backgroundImage = `url('${randomVariant}')`;
                 }
             }
             
@@ -176,9 +181,9 @@
                 isHolding = false;
                 isShowingVariant = false;
                 if (isSleepTime()) {
-                    portrait.src = imgSleeping;
+                    portrait.style.backgroundImage = `url('${imgSleeping}')`;
                 } else {
-                    portrait.src = imgBase;
+                    portrait.style.backgroundImage = `url('${imgBase}')`;
                 }
             }
             

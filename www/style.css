@@ -24,13 +24,17 @@ body {
     background: linear-gradient(135deg, #666 0%, #999 50%, #666 100%);
 }
 
- .blink-container img {
+
+.portrait-bg {
     display: block;
     width: 300px;
     height: 300px;
-    object-fit: cover;
+    background-size: cover;
+    background-position: center;
     border-radius: 50%;
     border: none;
+    background-repeat: no-repeat;
+    transition: background-image 0.2s;
 }
 
  .blink-container:hover {
@@ -81,7 +85,8 @@ body {
 
 /* Tablet */
 @media (max-width: 768px) {
-    .blink-container img {
+
+    .portrait-bg {
         width: 250px;
         height: 250px;
     }
@@ -102,7 +107,8 @@ body {
         padding: 5px;
     }
 
-    .blink-container img {
+
+    .portrait-bg {
         width: 260px;
         height: 260px;
     }
