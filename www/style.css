@@ -35,6 +35,8 @@ body {
     border: none;
     background-repeat: no-repeat;
     transition: background-image 0.2s;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
  .blink-container:hover {
