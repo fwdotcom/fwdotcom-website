@@ -43,19 +43,29 @@
                 'images/clay_frank_idea.jpg',
                 'images/clay_frank_looking_at_keyboard.jpg',
                 'images/clay_frank_smiling.jpg',
-                'images/clay_frank_thinking.jpg',
+                'images/clay_frank_sceptical.jpg',
                 'images/clay_frank_facepalm.jpg',
                 'images/clay_frank_grimacing_face.jpg',
                 'images/clay_frank_hands_up.jpg',
                 'images/clay_frank_rolling_eyes.jpg',
-                'images/clay_frank_winking_face.jpg'
+                'images/clay_frank_winking_face.jpg',
+                'images/clay_frank_holding_mug.jpg',
+                'images/clay_frank_scratching_head.jpg',
+                'images/clay_frank_tilting_head.jpg',
+                'images/clay_frank_thinking.jpg'
             ];
             
-            // Alle Bilder vorladen
-            [imgBase, imgClosedEyes, imgSleeping, ...imgVariants].forEach(src => {
-                const img = new Image();
-                img.src = src;
-            });
+            // Basisbild zuerst vorladen
+            const baseImg = new Image();
+            baseImg.src = imgBase;
+            
+            // Andere Bilder verzögert im Hintergrund vorladen
+            baseImg.onload = function() {
+                [imgClosedEyes, imgSleeping, ...imgVariants].forEach(src => {
+                    const img = new Image();
+                    img.src = src;
+                });
+            };
             
             let isShowingVariant = false;
             let isHolding = false;
