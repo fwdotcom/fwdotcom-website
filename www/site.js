@@ -20,7 +20,7 @@
 	// Season-Bilder liegen in images/seasons und werden über ein Mapping adressiert
 	const seasonImgDir = 'images/seasons/';
 	const seasonImages = {
-		holidays: `${seasonImgDir}clay_frank_holidays.webp`,
+		holidays: `${seasonImgDir}clay_frank_holidays.webp`, // ggf. Dateiname anpassen
 		xmas: `${seasonImgDir}clay_frank_xmas.webp`,
 		easter: `${seasonImgDir}clay_frank_easter.webp`,
 		halloween: `${seasonImgDir}clay_frank_halloween.webp`,
@@ -38,6 +38,10 @@
 		urlParams.has('newyear') ? 'new_year' :
 		urlParams.has('oktoberfest') ? 'oktoberfest' :
 		null;
+
+	// Schlafmodus-Overrides (im Normalmodus relevant; im URL-Vorrang-Modus ebenfalls)
+	const forceSleep = urlParams.has('sleeping');
+	const forceAwake = urlParams.has('awake');
 
 	// Datum um X Tage verschieben (liefert neues Date-Objekt)
 	function addDays(date, days) {
@@ -71,6 +75,14 @@
 		return new Date(year, month - 1, day, 12, 0, 0, 0);
 	}
 
+	// Prüft Schlafmodus im Normalbetrieb
+	function isSleepTime() {
+		if (forceAwake) return false;
+		if (forceSleep) return true;
+		const hour = new Date().getHours();
+		return hour >= 22 || hour < 6;
+	}
+
 	// holidays.json laden (liegt im Root: /holidays.json)
 	// Format: { "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" }
 	async function loadHolidaysRange() {
@@ -81,11 +93,9 @@
 			const data = await res.json();
 			if (!data || typeof data.from !== 'string' || typeof data.to !== 'string') return null;
 
-			// robuste Minimal-Validierung (YYYY-MM-DD)
 			const iso = /^\d{4}-\d{2}-\d{2}$/;
 			if (!iso.test(data.from) || !iso.test(data.to)) return null;
 
-			// lokale Tagesgrenzen
 			const from = new Date(data.from + 'T00:00:00');
 			const to = new Date(data.to + 'T23:59:59.999');
 
@@ -98,103 +108,21 @@
 		}
 	}
 
-	// Prüft, ob aktuell Holiday-Range aktiv ist
+	// Prüft, ob Holiday-Range aktiv ist
 	function isHolidayActive(range) {
 		if (!range) return false;
 		const now = new Date();
 		return now >= range.from && now <= range.to;
 	}
 
-	// Ermittelt, ob aktuell eine Season aktiv ist.
-	// Wenn ja: key + src zurückgeben, sonst null.
-	// Priority:
-	// 1) holidays.json (Holiday-Season) – hat Vorrang vor allem
-	// 2) forcedSeason per Query
-	// 3) feste Seasons per Kalenderlogik
-	async function getActiveSeason() {
-		// 1) Holiday-Season aus holidays.json (oder per Query ?holidays)
-		if (forcedSeason === 'holidays') {
-			return { key: 'holidays', src: seasonImages.holidays };
-		}
-
-		const holidayRange = await loadHolidaysRange();
-		if (isHolidayActive(holidayRange)) {
-			return { key: 'holidays', src: seasonImages.holidays };
-		}
-
-		// 2) Andere Query-Overrides
-		if (forcedSeason) {
-			return { key: forcedSeason, src: seasonImages[forcedSeason] };
-		}
-
-		const now = new Date();
-		const y = now.getFullYear();
-
-		// Weihnachten: 15.12. - 27.12.
-		if (inRangeInclusive(
-			now,
-			new Date(y, 11, 15, 0, 0, 0, 0),
-			new Date(y, 11, 27, 23, 59, 59, 999)
-		)) {
-			return { key: 'xmas', src: seasonImages.xmas };
-		}
-
-		// Oktoberfest: 15.09. - 10.10. (bewusst vereinfachter Zeitraum)
-		if (inRangeInclusive(
-			now,
-			new Date(y, 8, 15, 0, 0, 0, 0),
-			new Date(y, 9, 10, 23, 59, 59, 999)
-		)) {
-			return { key: 'oktoberfest', src: seasonImages.oktoberfest };
-		}
-
-		// Halloween: 25.10. - 01.11. (bewusst erweiterter Zeitraum)
-		if (inRangeInclusive(
-			now,
-			new Date(y, 9, 25, 0, 0, 0, 0),
-			new Date(y, 10, 1, 23, 59, 59, 999)
-		)) {
-			return { key: 'halloween', src: seasonImages.halloween };
-		}
-
-		// Neujahr: 31.12. - 05.01. (über Jahreswechsel)
-		if (
-			inRangeInclusive(
-				now,
-				new Date(y, 11, 31, 0, 0, 0, 0),
-				new Date(y + 1, 0, 5, 23, 59, 59, 999)
-			) ||
-			inRangeInclusive(
-				now,
-				new Date(y - 1, 11, 31, 0, 0, 0, 0),
-				new Date(y, 0, 5, 23, 59, 59, 999)
-			)
-		) {
-			return { key: 'new_year', src: seasonImages.new_year };
-		}
-
-		// Ostern: eine Woche vor Ostersonntag bis Ostermontag (inklusive)
-		const easterSunday = easterSundayDate(y);
-		const easterStart = addDays(easterSunday, -7);
-		easterStart.setHours(0, 0, 0, 0);
-		const easterEnd = addDays(easterSunday, 1);
-		easterEnd.setHours(23, 59, 59, 999);
-
-		if (inRangeInclusive(now, easterStart, easterEnd)) {
-			return { key: 'easter', src: seasonImages.easter };
-		}
-
-		return null;
-	}
-
-	// Initialisiert den Season-Mode: nur Season-Bild laden, keine weitere Mechanik
-	function initSeasonMode(season) {
+	// Initialisiert einen „Season-Mode“: nur ein Bild laden/zeigen, keine weitere Mechanik
+	function initStaticImageMode(src) {
 		const img = new Image();
-		img.src = season.src;
+		img.src = src;
 		img.onload = function () {
-			portrait.src = season.src;
+			portrait.src = src;
 		};
-		portrait.src = season.src;
+		portrait.src = src;
 	}
 
 	// Initialisiert den Normal-Mode: Preload, Sleep-Mode, Blink, Varianten, Interaktionen
@@ -238,18 +166,6 @@
 		let isHolding = false;
 		let blinkTimeout = null;
 		let variantTimeout = null;
-
-		// Schlafmodus-Overrides
-		const forceSleep = urlParams.has('sleeping');
-		const forceAwake = urlParams.has('awake');
-
-		// Prüft, ob Schlafmodus aktiv ist (zwischen 22 und 6 Uhr oder per Parameter)
-		function isSleepTime() {
-			if (forceAwake) return false;
-			if (forceSleep) return true;
-			const hour = new Date().getHours();
-			return hour >= 22 || hour < 6;
-		}
 
 		// Preload: Erst Basisbild laden, dann alle anderen Bilder anstoßen
 		const baseImg = new Image();
@@ -370,15 +286,90 @@
 		};
 	}
 
-	// Season wird zuerst ermittelt, damit wir im Season-Fall sofort aussteigen können
-	const activeSeason = await getActiveSeason();
-
-	// Kontrollfluss: holidays (aus holidays.json) hat Vorrang, danach alle anderen Seasons
-	if (activeSeason) {
-		initSeasonMode(activeSeason);
+	// 1) URL-Parameter haben IMMER Vorrang:
+	//    - forcedSeason zeigt statisches Season-Bild
+	//    - sleeping/awake erzwingen Normalmodus (kein Season-Check, kein holidays.json)
+	if (forcedSeason) {
+		initStaticImageMode(seasonImages[forcedSeason]);
+		return;
+	}
+	if (forceAwake || forceSleep) {
+		initNormalMode();
 		return;
 	}
 
-	// Kein Season-Mode aktiv: kompletten Normalbetrieb starten
-	initNormalMode();
+	// 2) Season-Ermittlung (holidays.json hat Vorrang vor allen anderen Seasons)
+	const holidayRange = await loadHolidaysRange();
+	if (isHolidayActive(holidayRange)) {
+		initStaticImageMode(seasonImages.holidays);
+		return;
+	}
+
+	// 3) Normale Season-Ermittlung (ohne URL-Override)
+	(function () {
+		const now = new Date();
+		const y = now.getFullYear();
+
+		// Weihnachten: 15.12. - 27.12.
+		if (inRangeInclusive(
+			now,
+			new Date(y, 11, 15, 0, 0, 0, 0),
+			new Date(y, 11, 27, 23, 59, 59, 999)
+		)) {
+			initStaticImageMode(seasonImages.xmas);
+			return;
+		}
+
+		// Oktoberfest: 15.09. - 10.10.
+		if (inRangeInclusive(
+			now,
+			new Date(y, 8, 15, 0, 0, 0, 0),
+			new Date(y, 9, 10, 23, 59, 59, 999)
+		)) {
+			initStaticImageMode(seasonImages.oktoberfest);
+			return;
+		}
+
+		// Halloween: 25.10. - 01.11.
+		if (inRangeInclusive(
+			now,
+			new Date(y, 9, 25, 0, 0, 0, 0),
+			new Date(y, 10, 1, 23, 59, 59, 999)
+		)) {
+			initStaticImageMode(seasonImages.halloween);
+			return;
+		}
+
+		// Neujahr: 31.12. - 05.01. (über Jahreswechsel)
+		if (
+			inRangeInclusive(
+				now,
+				new Date(y, 11, 31, 0, 0, 0, 0),
+				new Date(y + 1, 0, 5, 23, 59, 59, 999)
+			) ||
+			inRangeInclusive(
+				now,
+				new Date(y - 1, 11, 31, 0, 0, 0, 0),
+				new Date(y, 0, 5, 23, 59, 59, 999)
+			)
+		) {
+			initStaticImageMode(seasonImages.new_year);
+			return;
+		}
+
+		// Ostern: eine Woche vor Ostersonntag bis Ostermontag
+		const easterSunday = easterSundayDate(y);
+		const easterStart = addDays(easterSunday, -7);
+		easterStart.setHours(0, 0, 0, 0);
+		const easterEnd = addDays(easterSunday, 1);
+		easterEnd.setHours(23, 59, 59, 999);
+
+		if (inRangeInclusive(now, easterStart, easterEnd)) {
+			initStaticImageMode(seasonImages.easter);
+			return;
+		}
+
+		// 4) Normalzustand: keine Season aktiv -> Normalbetrieb starten
+		initNormalMode();
+	})();
 })();
