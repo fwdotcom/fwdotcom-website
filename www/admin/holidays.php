@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 // Ziel-Datei
-$targetFile = __DIR__ . '/holidays.json';
+$targetFile = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . '/holidays.json';
 
 // Hilfsfunktion: Datum validieren (YYYY-MM-DD)
 function isValidDate(string $date): bool {
