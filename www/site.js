@@ -1,4 +1,4 @@
-(function () {
+(async function () {
 	// Portrait-Bild (img-Element), dessen src wir austauschen
 	const portrait = document.getElementById('frank-portrait');
 
@@ -14,12 +14,13 @@
 
 	// Query-Parameter für Test-/Override-Zwecke
 	// ?sleeping erzwingt Schlafmodus, ?awake erzwingt Wachmodus
-	// Seasons können per ?xmas, ?easter, ?halloween, ?newyear, ?oktoberfest erzwungen werden
+	// Seasons können per ?holidays, ?xmas, ?easter, ?halloween, ?newyear, ?oktoberfest erzwungen werden
 	const urlParams = new URLSearchParams(window.location.search);
 
 	// Season-Bilder liegen in images/seasons und werden über ein Mapping adressiert
 	const seasonImgDir = 'images/seasons/';
 	const seasonImages = {
+		holidays: `${seasonImgDir}clay_frank_holidays.webp`,
 		xmas: `${seasonImgDir}clay_frank_xmas.webp`,
 		easter: `${seasonImgDir}clay_frank_easter.webp`,
 		halloween: `${seasonImgDir}clay_frank_halloween.webp`,
@@ -30,6 +31,7 @@
 	// Aus den möglichen Season-Query-Flags genau eine Season bestimmen (Priorität = Reihenfolge)
 	// Hinweis: Query-Key "newyear" mappt auf season key "new_year"
 	const forcedSeason =
+		urlParams.has('holidays') ? 'holidays' :
 		urlParams.has('xmas') ? 'xmas' :
 		urlParams.has('easter') ? 'easter' :
 		urlParams.has('halloween') ? 'halloween' :
@@ -69,10 +71,58 @@
 		return new Date(year, month - 1, day, 12, 0, 0, 0);
 	}
 
+	// holidays.json laden (liegt im Root: /holidays.json)
+	// Format: { "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" }
+	async function loadHolidaysRange() {
+		try {
+			const res = await fetch('/holidays.json', { cache: 'no-store' });
+			if (!res.ok) return null;
+
+			const data = await res.json();
+			if (!data || typeof data.from !== 'string' || typeof data.to !== 'string') return null;
+
+			// robuste Minimal-Validierung (YYYY-MM-DD)
+			const iso = /^\d{4}-\d{2}-\d{2}$/;
+			if (!iso.test(data.from) || !iso.test(data.to)) return null;
+
+			// lokale Tagesgrenzen
+			const from = new Date(data.from + 'T00:00:00');
+			const to = new Date(data.to + 'T23:59:59.999');
+
+			if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) return null;
+			if (to < from) return null;
+
+			return { from, to };
+		} catch {
+			return null;
+		}
+	}
+
+	// Prüft, ob aktuell Holiday-Range aktiv ist
+	function isHolidayActive(range) {
+		if (!range) return false;
+		const now = new Date();
+		return now >= range.from && now <= range.to;
+	}
+
 	// Ermittelt, ob aktuell eine Season aktiv ist.
 	// Wenn ja: key + src zurückgeben, sonst null.
-	// Query-Parameter überschreiben die Logik, damit du bequem testen kannst.
-	function getActiveSeason() {
+	// Priority:
+	// 1) holidays.json (Holiday-Season) – hat Vorrang vor allem
+	// 2) forcedSeason per Query
+	// 3) feste Seasons per Kalenderlogik
+	async function getActiveSeason() {
+		// 1) Holiday-Season aus holidays.json (oder per Query ?holidays)
+		if (forcedSeason === 'holidays') {
+			return { key: 'holidays', src: seasonImages.holidays };
+		}
+
+		const holidayRange = await loadHolidaysRange();
+		if (isHolidayActive(holidayRange)) {
+			return { key: 'holidays', src: seasonImages.holidays };
+		}
+
+		// 2) Andere Query-Overrides
 		if (forcedSeason) {
 			return { key: forcedSeason, src: seasonImages[forcedSeason] };
 		}
@@ -108,7 +158,6 @@
 		}
 
 		// Neujahr: 31.12. - 05.01. (über Jahreswechsel)
-		// Zwei Checks, damit sowohl Dezember (Start im aktuellen Jahr) als auch Januar (Fortsetzung im neuen Jahr) abgedeckt sind
 		if (
 			inRangeInclusive(
 				now,
@@ -138,19 +187,13 @@
 		return null;
 	}
 
-	// Season wird zuerst ermittelt, damit wir im Season-Fall sofort aussteigen können
-	const activeSeason = getActiveSeason();
-
 	// Initialisiert den Season-Mode: nur Season-Bild laden, keine weitere Mechanik
 	function initSeasonMode(season) {
-		// Optional: Hold/Interaktion im Season-Mode komplett abschalten (Event-Listener werden gar nicht erst registriert)
-		// Wir setzen trotzdem safe den src, sobald das Bild geladen ist.
 		const img = new Image();
 		img.src = season.src;
 		img.onload = function () {
 			portrait.src = season.src;
 		};
-		// Fallback: falls onload nicht feuert (z.B. aus Cache sehr schnell), src trotzdem setzen
 		portrait.src = season.src;
 	}
 
@@ -321,14 +364,16 @@
 		overlay.addEventListener('touchend', endHold);
 		overlay.addEventListener('touchcancel', endHold);
 
-		// Optional: Rückgabe einer Cleanup-Funktion (falls du später mal „unmount“ brauchst)
 		return function cleanup() {
 			clearTimeout(blinkTimeout);
 			clearTimeout(variantTimeout);
 		};
 	}
 
-	// Kontrollfluss: Season hat Vorrang und beendet die Initialisierung früh
+	// Season wird zuerst ermittelt, damit wir im Season-Fall sofort aussteigen können
+	const activeSeason = await getActiveSeason();
+
+	// Kontrollfluss: holidays (aus holidays.json) hat Vorrang, danach alle anderen Seasons
 	if (activeSeason) {
 		initSeasonMode(activeSeason);
 		return;
