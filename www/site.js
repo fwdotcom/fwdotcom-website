@@ -20,7 +20,7 @@
 	// Season-Bilder liegen in images/seasons und werden über ein Mapping adressiert
 	const seasonImgDir = 'images/seasons/';
 	const seasonImages = {
-		holidays: `${seasonImgDir}clay_frank_holidays.webp`, // ggf. Dateiname anpassen
+		holidays: `${seasonImgDir}clay_frank_holidays.webp`,
 		xmas: `${seasonImgDir}clay_frank_xmas.webp`,
 		easter: `${seasonImgDir}clay_frank_easter.webp`,
 		halloween: `${seasonImgDir}clay_frank_halloween.webp`,
