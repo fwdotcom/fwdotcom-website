@@ -128,18 +128,26 @@
 	// Initialisiert den Normal-Mode: Preload, Sleep-Mode, Blink, Varianten, Interaktionen
 	function initNormalMode() {
 		// Highlight-Klasse kurz setzen (z.B. für Initial-Aufmerksamkeit)
-		function toggleHighlight() {
+		function showClickHint() {
 			overlay.classList.add('highlight');
+			if (!isSleepTime() && isIntro) {
+				portrait.src = imgClickSign;
+			}
 			setTimeout(() => {
 				overlay.classList.remove('highlight');
-			}, 1000);
+				if (!isSleepTime() && isIntro) {
+					portrait.src = imgBase;
+				}
+				isIntro = false;
+			}, 2000);
 		}
 
-		// Highlight direkt nach Init auslösen
-		setTimeout(toggleHighlight, 0);
-
+		// ClickSign mit leichter Verzögerung zeigen
+		setTimeout(showClickHint, 1000);
+		
 		// Standardbilder (Basis, Blinzeln, Schlafmodus)
 		const imgBase = 'images/clay_frank.webp';
+		const imgClickSign = 'images/clay_frank_holding_click_sign.webp';
 		const imgClosedEyes = 'images/clay_frank_closed_eyes.webp';
 		const imgSleeping = 'images/clay_frank_sleeping.webp';
 		const imgSleepingOpenEyes = 'images/clay_frank_sleeping_open_eyes.webp';
@@ -162,6 +170,7 @@
 		];
 
 		// Statusflags für Logik und Interaktion
+		let isIntro = true;
 		let isShowingVariant = false;
 		let isHolding = false;
 		let blinkTimeout = null;
@@ -195,8 +204,8 @@
 
 		// Blinzeln-Loop
 		function blink() {
-			if (isSleepTime() || isShowingVariant || isHolding) {
-				blinkTimeout = setTimeout(blink, 2000 + Math.random() * 4000);
+			if (isIntro ||isSleepTime() || isShowingVariant || isHolding) {
+				blinkTimeout = setTimeout(blink, 2000 + Math.random() * 2000);
 				return;
 			}
 
@@ -212,7 +221,7 @@
 
 		// Varianten-Loop
 		function showRandomVariant() {
-			if (isSleepTime() || isHolding) {
+			if (isIntro || isSleepTime() || isHolding) {
 				variantTimeout = setTimeout(showRandomVariant, 10000);
 				return;
 			}
@@ -241,6 +250,7 @@
 				return;
 			}
 
+			isIntro = false;
 			isHolding = true;
 
 			if (!isShowingVariant) {
