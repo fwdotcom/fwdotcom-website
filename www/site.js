@@ -205,7 +205,7 @@
 		// Blinzeln-Loop
 		function blink() {
 			if (isIntro ||isSleepTime() || isShowingVariant || isHolding) {
-				blinkTimeout = setTimeout(blink, 2000 + Math.random() * 2000);
+				blinkTimeout = setTimeout(blink, 2000 + Math.random() * 3000);
 				return;
 			}
 
@@ -215,7 +215,7 @@
 				if (!isSleepTime() && !isShowingVariant && !isHolding) {
 					portrait.src = imgBase;
 				}
-				blinkTimeout = setTimeout(blink, 2000 + Math.random() * 4000);
+				blinkTimeout = setTimeout(blink, 2000 + Math.random() * 3000);
 			}, 150 + Math.random() * 50);
 		}
 
