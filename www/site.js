@@ -1,385 +1,389 @@
 (async function () {
-	// Portrait-Bild (img-Element), dessen src wir austauschen
-	const portrait = document.getElementById('frank-portrait');
+    // =========================================================================
+    // KONFIGURATION: TIMINGS & INTERVALLE (in Millisekunden)
+    // =========================================================================
+    
+    // -- Interaktionen --
+    const TIME_HOLD_RELEASE_DELAY = 500
+    const TIME_INTRO_HINT_DELAY = 1000;
+    const TIME_INTRO_HINT_DURATION = 1500;
 
-	// Overlay/Container für Interaktionen (Klick/Touch); dient als „Hitbox“
-	const overlay = document.querySelector('.blink-container');
+    // -- Dauer des Blinzelns (Basis + Zufall)
+    const TIME_BLINK_CLOSED_BASE = 100;
+    const TIME_BLINK_CLOSED_VAR  = 100; 
+    
+    // Zeit zwischen zwei Blinzlern (Basis + Zufall)
+    const TIME_BLINK_INTERVAL_BASE = 2000;
+    const TIME_BLINK_INTERVAL_VAR  = 1000;
 
-	// Falls das Script auf einer Seite ohne Portrait/Overlay läuft, nichts tun
-	if (!portrait || !overlay) return;
+    // Dauer der Variantenanzeige (Basis + Zufall)
+    const TIME_VARIANT_SHOW_BASE = 500;
+    const TIME_VARIANT_SHOW_VAR  = 1000;
+    
+    // Zeit zwischen zwei Varianten (Basis + Zufall)
+    const TIME_VARIANT_INTERVAL_BASE = 2000;
+    const TIME_VARIANT_INTERVAL_VAR  = 2500;
+    
+    const TIME_VARIANT_RETRY = 10000;
 
-	// Kontextmenü und Draggen unterbinden (gegen „Bild speichern“, langes Draggen etc.)
-	overlay.addEventListener('contextmenu', function (e) { e.preventDefault(); });
-	overlay.addEventListener('dragstart', function (e) { e.preventDefault(); });
+    // -- System --
+    const TIME_SLEEP_CHECK_INTERVAL = 60000;
 
-	// Query-Parameter für Test-/Override-Zwecke
-	// ?sleeping erzwingt Schlafmodus, ?awake erzwingt Wachmodus
-	// Seasons können per ?holidays, ?xmas, ?easter, ?halloween, ?newyear, ?oktoberfest erzwungen werden
-	const urlParams = new URLSearchParams(window.location.search);
 
-	// Season-Bilder liegen in images/seasons und werden über ein Mapping adressiert
-	const seasonImgDir = 'images/seasons/';
-	const seasonImages = {
-		holidays: `${seasonImgDir}clay_frank_holidays.webp`,
-		xmas: `${seasonImgDir}clay_frank_xmas.webp`,
-		easter: `${seasonImgDir}clay_frank_easter.webp`,
-		halloween: `${seasonImgDir}clay_frank_halloween.webp`,
-		new_year: `${seasonImgDir}clay_frank_new_year.webp`,
-		oktoberfest: `${seasonImgDir}clay_frank_oktoberfest.webp`
-	};
+    // =========================================================================
+    // HAUPTLOGIK
+    // =========================================================================
 
-	// Aus den möglichen Season-Query-Flags genau eine Season bestimmen (Priorität = Reihenfolge)
-	// Hinweis: Query-Key "newyear" mappt auf season key "new_year"
-	const forcedSeason =
-		urlParams.has('holidays') ? 'holidays' :
-		urlParams.has('xmas') ? 'xmas' :
-		urlParams.has('easter') ? 'easter' :
-		urlParams.has('halloween') ? 'halloween' :
-		urlParams.has('newyear') ? 'new_year' :
-		urlParams.has('oktoberfest') ? 'oktoberfest' :
-		null;
+    const portrait = document.getElementById('frank-portrait');
+    const overlay = document.querySelector('.blink-container');
 
-	// Schlafmodus-Overrides (im Normalmodus relevant; im URL-Vorrang-Modus ebenfalls)
-	const forceSleep = urlParams.has('sleeping');
-	const forceAwake = urlParams.has('awake');
+    if (!portrait || !overlay) return;
 
-	// Datum um X Tage verschieben (liefert neues Date-Objekt)
-	function addDays(date, days) {
-		const d = new Date(date);
-		d.setDate(d.getDate() + days);
-		return d;
-	}
+    overlay.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    overlay.addEventListener('dragstart', function (e) { e.preventDefault(); });
 
-	// Inklusive Range-Check (start und end zählen mit)
-	function inRangeInclusive(now, start, end) {
-		return now >= start && now <= end;
-	}
+    const urlParams = new URLSearchParams(window.location.search);
 
-	// Hilfsfunktion: Ostersonntag (Gregorianisch) berechnen (Meeus/Jones/Butcher)
-	// Wir setzen bewusst 12:00 Uhr, um „Zeitkanten“ durch DST/Zeitzonen zu vermeiden
-	function easterSundayDate(year) {
-		const a = year % 19;
-		const b = Math.floor(year / 100);
-		const c = year % 100;
-		const d = Math.floor(b / 4);
-		const e = b % 4;
-		const f = Math.floor((b + 8) / 25);
-		const g = Math.floor((b - f + 1) / 3);
-		const h = (19 * a + b - d - g + 15) % 30;
-		const i = Math.floor(c / 4);
-		const k = c % 4;
-		const l = (32 + 2 * e + 2 * i - h - k) % 7;
-		const m = Math.floor((a + 11 * h + 22 * l) / 451);
-		const month = Math.floor((h + l - 7 * m + 114) / 31); // 3=March, 4=April
-		const day = ((h + l - 7 * m + 114) % 31) + 1;
-		return new Date(year, month - 1, day, 12, 0, 0, 0);
-	}
+    const seasonImgDir = 'images/seasons/';
+    const seasonImages = {
+        holidays: `${seasonImgDir}clay_frank_holidays.webp`,
+        xmas: `${seasonImgDir}clay_frank_xmas.webp`,
+        easter: `${seasonImgDir}clay_frank_easter.webp`,
+        halloween: `${seasonImgDir}clay_frank_halloween.webp`,
+        new_year: `${seasonImgDir}clay_frank_new_year.webp`,
+        oktoberfest: `${seasonImgDir}clay_frank_oktoberfest.webp`
+    };
 
-	// Prüft Schlafmodus im Normalbetrieb
-	function isSleepTime() {
-		if (forceAwake) return false;
-		if (forceSleep) return true;
-		const hour = new Date().getHours();
-		return hour >= 22 || hour < 6;
-	}
+    const forcedSeason =
+        urlParams.has('holidays') ? 'holidays' :
+        urlParams.has('xmas') ? 'xmas' :
+        urlParams.has('easter') ? 'easter' :
+        urlParams.has('halloween') ? 'halloween' :
+        urlParams.has('newyear') ? 'new_year' :
+        urlParams.has('oktoberfest') ? 'oktoberfest' :
+        null;
 
-	// holidays.json laden (liegt im Root: /holidays.json)
-	// Format: { "from": "YYYY-MM-DD", "to": "YYYY-MM-DD" }
-	async function loadHolidaysRange() {
-		try {
-			const res = await fetch('/holidays.json', { cache: 'no-store' });
-			if (!res.ok) return null;
+    const forceSleep = urlParams.has('sleeping');
+    const forceAwake = urlParams.has('awake');
 
-			const data = await res.json();
-			if (!data || typeof data.from !== 'string' || typeof data.to !== 'string') return null;
+    function addDays(date, days) {
+        const d = new Date(date);
+        d.setDate(d.getDate() + days);
+        return d;
+    }
 
-			const iso = /^\d{4}-\d{2}-\d{2}$/;
-			if (!iso.test(data.from) || !iso.test(data.to)) return null;
+    function inRangeInclusive(now, start, end) {
+        return now >= start && now <= end;
+    }
 
-			const from = new Date(data.from + 'T00:00:00');
-			const to = new Date(data.to + 'T23:59:59.999');
+    function easterSundayDate(year) {
+        const a = year % 19;
+        const b = Math.floor(year / 100);
+        const c = year % 100;
+        const d = Math.floor(b / 4);
+        const e = b % 4;
+        const f = Math.floor((b + 8) / 25);
+        const g = Math.floor((b - f + 1) / 3);
+        const h = (19 * a + b - d - g + 15) % 30;
+        const i = Math.floor(c / 4);
+        const k = c % 4;
+        const l = (32 + 2 * e + 2 * i - h - k) % 7;
+        const m = Math.floor((a + 11 * h + 22 * l) / 451);
+        const month = Math.floor((h + l - 7 * m + 114) / 31);
+        const day = ((h + l - 7 * m + 114) % 31) + 1;
+        return new Date(year, month - 1, day, 12, 0, 0, 0);
+    }
 
-			if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) return null;
-			if (to < from) return null;
+    function isSleepTime() {
+        if (forceAwake) return false;
+        if (forceSleep) return true;
+        const hour = new Date().getHours();
+        return hour >= 22 || hour < 6;
+    }
 
-			return { from, to };
-		} catch {
-			return null;
-		}
-	}
+    async function loadHolidaysRange() {
+        try {
+            const res = await fetch('/holidays.json', { cache: 'no-store' });
+            if (!res.ok) return null;
+            const data = await res.json();
+            if (!data || typeof data.from !== 'string' || typeof data.to !== 'string') return null;
+            const iso = /^\d{4}-\d{2}-\d{2}$/;
+            if (!iso.test(data.from) || !iso.test(data.to)) return null;
+            const from = new Date(data.from + 'T00:00:00');
+            const to = new Date(data.to + 'T23:59:59.999');
+            if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) return null;
+            if (to < from) return null;
+            return { from, to };
+        } catch {
+            return null;
+        }
+    }
 
-	// Prüft, ob Holiday-Range aktiv ist
-	function isHolidayActive(range) {
-		if (!range) return false;
-		const now = new Date();
-		return now >= range.from && now <= range.to;
-	}
+    function isHolidayActive(range) {
+        if (!range) return false;
+        const now = new Date();
+        return now >= range.from && now <= range.to;
+    }
 
-	// Initialisiert einen „Season-Mode“: nur ein Bild laden/zeigen, keine weitere Mechanik
-	function initStaticImageMode(src) {
-		const img = new Image();
-		img.src = src;
-		img.onload = function () {
-			portrait.src = src;
-		};
-		portrait.src = src;
-	}
+    function initStaticImageMode(src) {
+        const img = new Image();
+        img.src = src;
+        img.onload = function () {
+            portrait.src = src;
+        };
+        portrait.src = src;
+    }
 
-	// Initialisiert den Normal-Mode: Preload, Sleep-Mode, Blink, Varianten, Interaktionen
-	function initNormalMode() {
-		// Highlight-Klasse kurz setzen (z.B. für Initial-Aufmerksamkeit)
-		function showClickHint() {
-			overlay.classList.add('highlight');
-			if (!isSleepTime() && isIntro) {
-				portrait.src = imgClickSign;
-			}
-			setTimeout(() => {
-				overlay.classList.remove('highlight');
-				if (!isSleepTime() && isIntro) {
-					portrait.src = imgBase;
-				}
-				isIntro = false;
-			}, 2000);
-		}
+    function initNormalMode() {
+        const imgBase = 'images/clay_frank.webp';
+        const imgClickSign = 'images/clay_frank_holding_click_sign.webp';
+        const imgClosedEyes = 'images/clay_frank_closed_eyes.webp';
+        const imgSleeping = 'images/clay_frank_sleeping.webp';
+        const imgSleepingOpenEyes = 'images/clay_frank_sleeping_open_eyes.webp';
 
-		// ClickSign mit leichter Verzögerung zeigen
-		setTimeout(showClickHint, 1000);
-		
-		// Standardbilder (Basis, Blinzeln, Schlafmodus)
-		const imgBase = 'images/clay_frank.webp';
-		const imgClickSign = 'images/clay_frank_holding_click_sign.webp';
-		const imgClosedEyes = 'images/clay_frank_closed_eyes.webp';
-		const imgSleeping = 'images/clay_frank_sleeping.webp';
-		const imgSleepingOpenEyes = 'images/clay_frank_sleeping_open_eyes.webp';
+        const imgVariants = [
+            'images/clay_frank_idea.webp',
+            'images/clay_frank_looking_at_keyboard.webp',
+            'images/clay_frank_smiling.webp',
+            'images/clay_frank_sceptical.webp',
+            'images/clay_frank_facepalm.webp',
+            'images/clay_frank_grimacing_face.webp',
+            'images/clay_frank_hands_up.webp',
+            'images/clay_frank_rolling_eyes.webp',
+            'images/clay_frank_winking_face.webp',
+            'images/clay_frank_holding_mug.webp',
+            'images/clay_frank_scratching_head.webp',
+            'images/clay_frank_tilting_head.webp',
+            'images/clay_frank_thinking.webp'
+        ];
 
-		// Emotionale/Interaktions-Varianten
-		const imgVariants = [
-			'images/clay_frank_idea.webp',
-			'images/clay_frank_looking_at_keyboard.webp',
-			'images/clay_frank_smiling.webp',
-			'images/clay_frank_sceptical.webp',
-			'images/clay_frank_facepalm.webp',
-			'images/clay_frank_grimacing_face.webp',
-			'images/clay_frank_hands_up.webp',
-			'images/clay_frank_rolling_eyes.webp',
-			'images/clay_frank_winking_face.webp',
-			'images/clay_frank_holding_mug.webp',
-			'images/clay_frank_scratching_head.webp',
-			'images/clay_frank_tilting_head.webp',
-			'images/clay_frank_thinking.webp'
-		];
+        let isIntro = true;
+        let isShowingVariant = false;
+        let isHolding = false;
+        let areTimersRunning = false;
+        
+        let blinkTimeout = null;
+        let variantTimeout = null;
+        let endHoldTimeout = null;
+        let hintTimeout = null;
 
-		// Statusflags für Logik und Interaktion
-		let isIntro = true;
-		let isShowingVariant = false;
-		let isHolding = false;
-		let blinkTimeout = null;
-		let variantTimeout = null;
+        function cancelPendingEndHold() {
+            if (endHoldTimeout) {
+                clearTimeout(endHoldTimeout);
+                endHoldTimeout = null;
+            }
+        }
 
-		// Preload: Erst Basisbild laden, dann alle anderen Bilder anstoßen
-		const baseImg = new Image();
-		baseImg.src = imgBase;
-		baseImg.onload = function () {
-			[
-				imgClosedEyes,
-				imgSleeping,
-				imgSleepingOpenEyes,
-				...imgVariants
-			].forEach(src => {
-				const img = new Image();
-				img.src = src;
-			});
-		};
+        const baseImg = new Image();
+        baseImg.src = imgBase;
+        baseImg.onload = function () {
+            [imgClosedEyes, imgSleeping, imgSleepingOpenEyes, ...imgVariants].forEach(src => {
+                const img = new Image();
+                img.src = src;
+            });
+        };
 
-		// Setzt das Portrait in den korrekten Zustand (Schlafbild oder Standardbild)
-		function updateSleepMode() {
-			if (isHolding) return;
+        // NEU: Funktion zum Starten der Idle-Loops (Blinken/Varianten)
+                // Funktion zum Stoppen und Neustarten der Idle-Timer (Singleton-Prinzip)
+                function resetIdleTimers() {
+                    clearTimeout(blinkTimeout);
+                    clearTimeout(variantTimeout);
+                    areTimersRunning = false;
+                    blinkTimeout = null;
+                    variantTimeout = null;
+                    startIdleTimers();
+                }
+        function startIdleTimers() {
+            if (areTimersRunning) return;
+            areTimersRunning = true;
 
-			if (isSleepTime()) {
-				portrait.src = imgSleeping;
-			} else if (!isShowingVariant) {
-				portrait.src = imgBase;
-			}
-		}
+            blinkTimeout = setTimeout(blink, TIME_BLINK_INTERVAL_BASE + Math.random() * TIME_BLINK_INTERVAL_VAR);
+            variantTimeout = setTimeout(showRandomVariant, TIME_VARIANT_INTERVAL_BASE + Math.random() * TIME_VARIANT_INTERVAL_VAR);
+        }
 
-		// Blinzeln-Loop
-		function blink() {
-			if (isIntro ||isSleepTime() || isShowingVariant || isHolding) {
-				blinkTimeout = setTimeout(blink, 2000 + Math.random() * 3000);
-				return;
-			}
+        function showClickHint() {
+            if (!isIntro || isSleepTime()) return;
 
-			portrait.src = imgClosedEyes;
+            overlay.classList.add('highlight');
+            portrait.src = imgClickSign;
+            
+            setTimeout(() => {
+                overlay.classList.remove('highlight');
+                if (!isSleepTime() && isIntro && !isHolding) {
+                    portrait.src = imgBase;
+                }
+                isIntro = false;
+                startIdleTimers(); // START: Intro natürlich beendet
+            }, TIME_INTRO_HINT_DURATION);
+        }
 
-			setTimeout(() => {
-				if (!isSleepTime() && !isShowingVariant && !isHolding) {
-					portrait.src = imgBase;
-				}
-				blinkTimeout = setTimeout(blink, 2000 + Math.random() * 3000);
-			}, 150 + Math.random() * 50);
-		}
+        hintTimeout = setTimeout(showClickHint, TIME_INTRO_HINT_DELAY);
 
-		// Varianten-Loop
-		function showRandomVariant() {
-			if (isIntro || isSleepTime() || isHolding) {
-				variantTimeout = setTimeout(showRandomVariant, 10000);
-				return;
-			}
+        function updateSleepMode() {
+            if (isHolding) return;
+            if (isSleepTime()) {
+                portrait.src = imgSleeping;
+            } else if (!isShowingVariant) {
+                portrait.src = imgBase;
+            }
+        }
 
-			isShowingVariant = true;
-			const randomVariant = imgVariants[Math.floor(Math.random() * imgVariants.length)];
-			portrait.src = randomVariant;
+        function blink() {
+            // Checks, falls Timer doch irgendwie feuert
+            if (isIntro || isSleepTime() || isShowingVariant || isHolding) {
+                blinkTimeout = setTimeout(blink, TIME_BLINK_INTERVAL_BASE + Math.random() * TIME_BLINK_INTERVAL_VAR);
+                return;
+            }
 
-			setTimeout(() => {
-				isShowingVariant = false;
-				if (!isSleepTime() && !isHolding) {
-					portrait.src = imgBase;
-				}
-				variantTimeout = setTimeout(showRandomVariant, 4000 + Math.random() * 4000);
-			}, 1400 + Math.random() * 200);
-		}
+            portrait.src = imgClosedEyes;
 
-		// Hold-Interaktion starten
-		function startHold(e) {
-			e.preventDefault();
-			overlay.classList.add('highlight');
+            setTimeout(() => {
+                if (!isSleepTime() && !isShowingVariant && !isHolding) {
+                    portrait.src = imgBase;
+                }
+                blinkTimeout = setTimeout(blink, TIME_BLINK_INTERVAL_BASE + Math.random() * TIME_BLINK_INTERVAL_VAR);
+            }, TIME_BLINK_CLOSED_BASE + Math.random() * TIME_BLINK_CLOSED_VAR);
+        }
 
-			if (isSleepTime()) {
-				portrait.src = imgSleepingOpenEyes;
-				isHolding = true;
-				return;
-			}
+        function showRandomVariant() {
+            // Checks, falls Timer doch irgendwie feuert
+            if (isIntro || isSleepTime() || isHolding) {
+                variantTimeout = setTimeout(showRandomVariant, TIME_VARIANT_RETRY);
+                return;
+            }
 
-			isIntro = false;
-			isHolding = true;
+            isShowingVariant = true;
+            const randomVariant = imgVariants[Math.floor(Math.random() * imgVariants.length)];
+            portrait.src = randomVariant;
 
-			if (!isShowingVariant) {
-				isShowingVariant = true;
-				const randomVariant = imgVariants[Math.floor(Math.random() * imgVariants.length)];
-				portrait.src = randomVariant;
-			}
-		}
+            setTimeout(() => {
+                isShowingVariant = false;
+                if (!isSleepTime() && !isHolding) {
+                    portrait.src = imgBase;
+                }
+                variantTimeout = setTimeout(showRandomVariant, TIME_VARIANT_INTERVAL_BASE + Math.random() * TIME_VARIANT_INTERVAL_VAR);
+            }, TIME_VARIANT_SHOW_BASE + Math.random() * TIME_VARIANT_SHOW_VAR);
+        }
 
-		// Hold-Interaktion beenden
-		function endHold() {
-			overlay.classList.remove('highlight');
+        function startHold(e) {
+            e.preventDefault();
+            
+            if (hintTimeout) {
+                clearTimeout(hintTimeout);
+                hintTimeout = null;
+            }
 
-			if (!isHolding) return;
+            cancelPendingEndHold();
+            overlay.classList.add('highlight');
 
-			isHolding = false;
-			isShowingVariant = false;
+            isIntro = false;
+            startIdleTimers(); // START: Intro durch User-Aktion beendet
+            
+            if (isSleepTime()) {
+                portrait.src = imgSleepingOpenEyes;
+                isHolding = true;
+                return;
+            }
 
-			if (isSleepTime()) {
-				portrait.src = imgSleeping;
-			} else {
-				portrait.src = imgBase;
-			}
-		}
+            isHolding = true;
 
-		// Initialzustand setzen und Loops starten
-		updateSleepMode();
-		setInterval(updateSleepMode, 60000);
-		setTimeout(blink, 1000 + Math.random() * 2000);
-		setTimeout(showRandomVariant, 3000 + Math.random() * 5000);
+            if (!isShowingVariant) {
+                isShowingVariant = true;
+                const randomVariant = imgVariants[Math.floor(Math.random() * imgVariants.length)];
+                portrait.src = randomVariant;
+            }
+        }
 
-		// Interaktions-Events registrieren
-		overlay.addEventListener('mousedown', startHold);
-		overlay.addEventListener('mouseup', endHold);
-		overlay.addEventListener('mouseleave', endHold);
-		overlay.addEventListener('touchstart', startHold, { passive: false });
-		overlay.addEventListener('touchend', endHold);
-		overlay.addEventListener('touchcancel', endHold);
+        function endHold() {
+            if (!isHolding) return;
+            cancelPendingEndHold();
 
-		return function cleanup() {
-			clearTimeout(blinkTimeout);
-			clearTimeout(variantTimeout);
-		};
-	}
+            endHoldTimeout = setTimeout(() => {
+                endHoldTimeout = null;
+                overlay.classList.remove('highlight');
+                if (!isHolding) return;
 
-	// 1) URL-Parameter haben IMMER Vorrang:
-	//    - forcedSeason zeigt statisches Season-Bild
-	//    - sleeping/awake erzwingen Normalmodus (kein Season-Check, kein holidays.json)
-	if (forcedSeason) {
-		initStaticImageMode(seasonImages[forcedSeason]);
-		return;
-	}
-	if (forceAwake || forceSleep) {
-		initNormalMode();
-		return;
-	}
+                isHolding = false;
+                isShowingVariant = false;
 
-	// 2) Season-Ermittlung (holidays.json hat Vorrang vor allen anderen Seasons)
-	const holidayRange = await loadHolidaysRange();
-	if (isHolidayActive(holidayRange)) {
-		initStaticImageMode(seasonImages.holidays);
-		return;
-	}
+                if (isSleepTime()) {
+                    portrait.src = imgSleeping;
+                } else {
+                    portrait.src = imgBase;
+                }
+                // Idle-Timer nach jedem endHold als Singleton neu starten
+                resetIdleTimers();
+            }, TIME_HOLD_RELEASE_DELAY);
+        }
 
-	// 3) Normale Season-Ermittlung (ohne URL-Override)
-	(function () {
-		const now = new Date();
-		const y = now.getFullYear();
+        updateSleepMode();
+        setInterval(updateSleepMode, TIME_SLEEP_CHECK_INTERVAL);
+        
+        // HINWEIS: Hier wurden die direkten setTimeout-Aufrufe entfernt,
+        // da sie jetzt über startIdleTimers() gesteuert werden.
 
-		// Weihnachten: 15.12. - 27.12.
-		if (inRangeInclusive(
-			now,
-			new Date(y, 11, 15, 0, 0, 0, 0),
-			new Date(y, 11, 27, 23, 59, 59, 999)
-		)) {
-			initStaticImageMode(seasonImages.xmas);
-			return;
-		}
+        overlay.addEventListener('mousedown', startHold);
+        overlay.addEventListener('mouseup', endHold);
+        overlay.addEventListener('mouseleave', endHold);
+        overlay.addEventListener('touchstart', startHold, { passive: false });
+        overlay.addEventListener('touchend', endHold);
+        overlay.addEventListener('touchcancel', endHold);
 
-		// Oktoberfest: 15.09. - 10.10.
-		if (inRangeInclusive(
-			now,
-			new Date(y, 8, 15, 0, 0, 0, 0),
-			new Date(y, 9, 10, 23, 59, 59, 999)
-		)) {
-			initStaticImageMode(seasonImages.oktoberfest);
-			return;
-		}
+        return function cleanup() {
+            clearTimeout(blinkTimeout);
+            clearTimeout(variantTimeout);
+            if (hintTimeout) clearTimeout(hintTimeout);
+            cancelPendingEndHold();
+        };
+    }
 
-		// Halloween: 25.10. - 01.11.
-		if (inRangeInclusive(
-			now,
-			new Date(y, 9, 25, 0, 0, 0, 0),
-			new Date(y, 10, 1, 23, 59, 59, 999)
-		)) {
-			initStaticImageMode(seasonImages.halloween);
-			return;
-		}
+    if (forcedSeason) {
+        initStaticImageMode(seasonImages[forcedSeason]);
+        return;
+    }
+    if (forceAwake || forceSleep) {
+        initNormalMode();
+        return;
+    }
 
-		// Neujahr: 31.12. - 05.01. (über Jahreswechsel)
-		if (
-			inRangeInclusive(
-				now,
-				new Date(y, 11, 31, 0, 0, 0, 0),
-				new Date(y + 1, 0, 5, 23, 59, 59, 999)
-			) ||
-			inRangeInclusive(
-				now,
-				new Date(y - 1, 11, 31, 0, 0, 0, 0),
-				new Date(y, 0, 5, 23, 59, 59, 999)
-			)
-		) {
-			initStaticImageMode(seasonImages.new_year);
-			return;
-		}
+    const holidayRange = await loadHolidaysRange();
+    if (isHolidayActive(holidayRange)) {
+        initStaticImageMode(seasonImages.holidays);
+        return;
+    }
 
-		// Ostern: eine Woche vor Ostersonntag bis Ostermontag
-		const easterSunday = easterSundayDate(y);
-		const easterStart = addDays(easterSunday, -7);
-		easterStart.setHours(0, 0, 0, 0);
-		const easterEnd = addDays(easterSunday, 1);
-		easterEnd.setHours(23, 59, 59, 999);
+    (function () {
+        const now = new Date();
+        const y = now.getFullYear();
 
-		if (inRangeInclusive(now, easterStart, easterEnd)) {
-			initStaticImageMode(seasonImages.easter);
-			return;
-		}
+        if (inRangeInclusive(now, new Date(y, 11, 15), new Date(y, 11, 27, 23, 59, 59, 999))) {
+            initStaticImageMode(seasonImages.xmas);
+            return;
+        }
+        if (inRangeInclusive(now, new Date(y, 8, 15), new Date(y, 9, 10, 23, 59, 59, 999))) {
+            initStaticImageMode(seasonImages.oktoberfest);
+            return;
+        }
+        if (inRangeInclusive(now, new Date(y, 9, 25), new Date(y, 10, 1, 23, 59, 59, 999))) {
+            initStaticImageMode(seasonImages.halloween);
+            return;
+        }
+        if (inRangeInclusive(now, new Date(y, 11, 31), new Date(y + 1, 0, 5, 23, 59, 59, 999)) ||
+            inRangeInclusive(now, new Date(y - 1, 11, 31), new Date(y, 0, 5, 23, 59, 59, 999))) {
+            initStaticImageMode(seasonImages.new_year);
+            return;
+        }
+        const easterSunday = easterSundayDate(y);
+        const easterStart = addDays(easterSunday, -7);
+        easterStart.setHours(0, 0, 0, 0);
+        const easterEnd = addDays(easterSunday, 1);
+        easterEnd.setHours(23, 59, 59, 999);
 
-		// 4) Normalzustand: keine Season aktiv -> Normalbetrieb starten
-		initNormalMode();
-	})();
+        if (inRangeInclusive(now, easterStart, easterEnd)) {
+            initStaticImageMode(seasonImages.easter);
+            return;
+        }
+
+        initNormalMode();
+    })();
 })();
