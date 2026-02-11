@@ -14,15 +14,15 @@
     
     // Zeit zwischen zwei Blinzlern (Basis + Zufall)
     const TIME_BLINK_INTERVAL_BASE = 2000;
-    const TIME_BLINK_INTERVAL_VAR  = 1000;
+    const TIME_BLINK_INTERVAL_VAR  = 2000;
 
     // Dauer der Variantenanzeige (Basis + Zufall)
     const TIME_VARIANT_SHOW_BASE = 500;
     const TIME_VARIANT_SHOW_VAR  = 1000;
     
     // Zeit zwischen zwei Varianten (Basis + Zufall)
-    const TIME_VARIANT_INTERVAL_BASE = 2000;
-    const TIME_VARIANT_INTERVAL_VAR  = 2500;
+    const TIME_VARIANT_INTERVAL_BASE = 3000;
+    const TIME_VARIANT_INTERVAL_VAR  = 3000;
     
     const TIME_VARIANT_RETRY = 10000;
 
