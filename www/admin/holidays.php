@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 // Ziel-Datei
-$targetFile = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . '/holidays.json';
+$targetFile = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . '/away.json';
 
 // Hilfsfunktion: Datum validieren (YYYY-MM-DD)
 function isValidDate(string $date): bool {
@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>Holiday-Zeitraum setzen</title>
+	<title>Abwesenheits-Zeitraum setzen</title>
 	<style>
 		body {
 			font-family: system-ui, Arial, sans-serif;
@@ -127,11 +127,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
 
-<h1>Holiday-Zeitraum</h1>
+<h1>Abwesenheits-Zeitraum</h1>
 
 <?php if ($saved): ?>
 	<div class="msg ok">
-		Gespeichert. Frontend liest jetzt <code>holidays.json</code>.
+		Gespeichert. Frontend liest jetzt <code>away.json</code>.
 	</div>
 <?php endif; ?>
 

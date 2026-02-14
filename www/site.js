@@ -46,21 +46,23 @@
 
     const seasonImgDir = 'images/seasons/';
     const seasonImages = {
-        holidays: `${seasonImgDir}clay_frank_holidays.webp`,
+        away: `${seasonImgDir}clay_frank_backsoon.webp`,
         xmas: `${seasonImgDir}clay_frank_xmas.webp`,
         easter: `${seasonImgDir}clay_frank_easter.webp`,
         halloween: `${seasonImgDir}clay_frank_halloween.webp`,
         new_year: `${seasonImgDir}clay_frank_new_year.webp`,
-        oktoberfest: `${seasonImgDir}clay_frank_oktoberfest.webp`
+        oktoberfest: `${seasonImgDir}clay_frank_oktoberfest.webp`,
+        valentinesday: `${seasonImgDir}clay_frank_valentinesday.webp`
     };
 
     const forcedSeason =
-        urlParams.has('holidays') ? 'holidays' :
+        urlParams.has('away') ? 'away' :
         urlParams.has('xmas') ? 'xmas' :
         urlParams.has('easter') ? 'easter' :
         urlParams.has('halloween') ? 'halloween' :
         urlParams.has('newyear') ? 'new_year' :
         urlParams.has('oktoberfest') ? 'oktoberfest' :
+        urlParams.has('valentinesday') ? 'valentinesday' :
         null;
 
     const forceSleep = urlParams.has('sleeping');
@@ -101,9 +103,9 @@
         return hour >= 22 || hour < 6;
     }
 
-    async function loadHolidaysRange() {
+    async function loadAwayRange() {
         try {
-            const res = await fetch('/holidays.json', { cache: 'no-store' });
+            const res = await fetch('/away.json', { cache: 'no-store' });
             if (!res.ok) return null;
             const data = await res.json();
             if (!data || typeof data.from !== 'string' || typeof data.to !== 'string') return null;
@@ -119,7 +121,7 @@
         }
     }
 
-    function isHolidayActive(range) {
+    function isAwayActive(range) {
         if (!range) return false;
         const now = new Date();
         return now >= range.from && now <= range.to;
@@ -183,16 +185,15 @@
             });
         };
 
-        // NEU: Funktion zum Starten der Idle-Loops (Blinken/Varianten)
-                // Funktion zum Stoppen und Neustarten der Idle-Timer (Singleton-Prinzip)
-                function resetIdleTimers() {
-                    clearTimeout(blinkTimeout);
-                    clearTimeout(variantTimeout);
-                    areTimersRunning = false;
-                    blinkTimeout = null;
-                    variantTimeout = null;
-                    startIdleTimers();
-                }
+        function resetIdleTimers() {
+            clearTimeout(blinkTimeout);
+            clearTimeout(variantTimeout);
+            areTimersRunning = false;
+            blinkTimeout = null;
+            variantTimeout = null;
+            startIdleTimers();
+        }
+
         function startIdleTimers() {
             if (areTimersRunning) return;
             areTimersRunning = true;
@@ -213,7 +214,7 @@
                     portrait.src = imgBase;
                 }
                 isIntro = false;
-                startIdleTimers(); // START: Intro natürlich beendet
+                startIdleTimers();
             }, TIME_INTRO_HINT_DURATION);
         }
 
@@ -229,7 +230,6 @@
         }
 
         function blink() {
-            // Checks, falls Timer doch irgendwie feuert
             if (isIntro || isSleepTime() || isShowingVariant || isHolding) {
                 blinkTimeout = setTimeout(blink, TIME_BLINK_INTERVAL_BASE + Math.random() * TIME_BLINK_INTERVAL_VAR);
                 return;
@@ -246,7 +246,6 @@
         }
 
         function showRandomVariant() {
-            // Checks, falls Timer doch irgendwie feuert
             if (isIntro || isSleepTime() || isHolding) {
                 variantTimeout = setTimeout(showRandomVariant, TIME_VARIANT_RETRY);
                 return;
@@ -277,7 +276,7 @@
             overlay.classList.add('highlight');
 
             isIntro = false;
-            startIdleTimers(); // START: Intro durch User-Aktion beendet
+            startIdleTimers();
             
             if (isSleepTime()) {
                 portrait.src = imgSleepingOpenEyes;
@@ -311,7 +310,6 @@
                 } else {
                     portrait.src = imgBase;
                 }
-                // Idle-Timer nach jedem endHold als Singleton neu starten
                 resetIdleTimers();
             }, TIME_HOLD_RELEASE_DELAY);
         }
@@ -319,9 +317,6 @@
         updateSleepMode();
         setInterval(updateSleepMode, TIME_SLEEP_CHECK_INTERVAL);
         
-        // HINWEIS: Hier wurden die direkten setTimeout-Aufrufe entfernt,
-        // da sie jetzt über startIdleTimers() gesteuert werden.
-
         overlay.addEventListener('mousedown', startHold);
         overlay.addEventListener('mouseup', endHold);
         overlay.addEventListener('mouseleave', endHold);
@@ -346,9 +341,9 @@
         return;
     }
 
-    const holidayRange = await loadHolidaysRange();
-    if (isHolidayActive(holidayRange)) {
-        initStaticImageMode(seasonImages.holidays);
+    const awayRange = await loadAwayRange();
+    if (isAwayActive(awayRange)) {
+        initStaticImageMode(seasonImages.away);
         return;
     }
 
@@ -356,6 +351,10 @@
         const now = new Date();
         const y = now.getFullYear();
 
+        if (now.getMonth() === 1 && now.getDate() === 14) {
+            initStaticImageMode(seasonImages.valentinesday);
+            return;
+        }
         if (inRangeInclusive(now, new Date(y, 11, 15), new Date(y, 11, 27, 23, 59, 59, 999))) {
             initStaticImageMode(seasonImages.xmas);
             return;
