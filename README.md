@@ -75,24 +75,39 @@ echo "Done!"
 
 ---
 
+### Verwaltung der Abwesenheitszeiten (away.json)
+
+Die Datei `away.json` kann über das Admin-Interface unter [`admin/away.php`](www/admin/away.php) gepflegt werden. Sie enthält den Zeitraum, in dem das Abwesenheitsbild angezeigt wird.
+
+Beispiel für den Inhalt von `away.json`:
+
+```json
+{
+  "from": "2026-01-01",
+  "to": "2026-01-05"
+}
+```
+
+---
+
 ## Regeln für die Anzeige von Frank
 
 | Anlass/Regel         | Zeitraum/Trigger                                                                 | Angezeigtes Bild                        |
 |----------------------|---------------------------------------------------------------------------------|-----------------------------------------|
 | Schlafmodus          | Täglich 22:00–06:00 Uhr <br> oder URL-Parameter `?sleeping`                      | clay_frank_sleeping.webp                |
 | Manuelles Aufwecken  | URL-Parameter `?awake`                                                           | Normalmodus                             |
-| Urlaub (dynamisch)   | Zeitraum aus vacation.json                                                      | clay_frank_vacation.webp                |
+| Abwesenheit (dynamisch) | Zeitraum aus away.json                                                      | clay_frank_backsoon.webp                |
 | Weihnachten          | 15.12.–27.12. (jedes Jahr)                                                       | clay_frank_xmas.webp                    |
 | Oktoberfest          | 15.09.–10.10. (jedes Jahr)                                                       | clay_frank_oktoberfest.webp             |
 | Halloween            | 25.10.–01.11. (jedes Jahr)                                                       | clay_frank_halloween.webp               |
 | Neujahr              | 31.12.–05.01. (über Jahreswechsel)                                               | clay_frank_new_year.webp                |
 | Ostern               | Palmsonntag (eine Woche vor Ostersonntag) bis Ostermontag (Datum berechnet)      | clay_frank_easter.webp                  |
 | Valentinstag         | 14.02. (jedes Jahr)                                                              | clay_frank_valentinesday.webp           |
-| Forcierte Saisons    | URL-Parameter `?vacation`, `?xmas`, `?easter`, ...                               | Entsprechendes Saisonbild               |
+| Forcierte Saisons    | URL-Parameter `?away`, `?xmas`, `?easter`, ...                                   | Entsprechendes Saisonbild               |
 | Interaktion (Klick)  | Klick/Halten im Normalmodus                                                      | Zufällige Bildvariante                  |
 | Interaktion (Klick)  | Klick/Halten im Schlafmodus                                                      | clay_frank_sleeping_open_eyes.webp      |
 | Standard             | Kein besonderer Anlass                                                           | clay_frank.webp + Varianten             |
 
 - Die Regeln werden in der genannten Reihenfolge geprüft (höchste Priorität zuerst).
-- Urlaub aus vacation.json hat Vorrang vor festen Saisons.
+- Abwesenheit aus away.json hat Vorrang vor festen Saisons.
 - Interaktionen (Klick/Halten) überschreiben temporär das aktuelle Bild.
