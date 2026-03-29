@@ -24,6 +24,10 @@ jobs:
     # GitHub-hosted Linux Runner
     runs-on: ubuntu-latest
 
+    # Opt into Node.js 24 for actions
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
       # -----------------------------------------------------------------------
       # Repository auschecken
