@@ -1,23 +1,30 @@
 # -----------------------------------------------------------------------------
-# Manueller Deployment-Workflow zum Deployment auf den Web Server
+# Release-Workflow zum Deployment auf den Web Server
 #
 # Eigenschaften:
-# - Trigger: ausschließlich manuell (workflow_dispatch)
+# - Trigger: manuell (workflow_dispatch) oder bei Release-Veröffentlichung (release: published)
 # - Quelle: lokales Verzeichnis "www/"
 # - Ziel: festes Server-Verzeichnis (Secret: DEPLOY_PATH)
 # - Übertragung: rsync über SSH
-# - Synchronisationsmodus: Spiegelung (inkl. Löschung entfernter Dateien)
+# - Synchronisationsmodus: 1:1 Spiegelung (inkl. Löschung entfernter Dateien)
 #
 # WICHTIG:
 # - DEPLOY_PATH darf ausschließlich für diese Webseite verwendet werden
-# - Durch --delete werden serverseitig Dateien gelöscht, die lokal nicht mehr existieren
+# - Durch --delete werden serverseitig Dateien gelöscht, die im Repo nicht mehr existieren
 # -----------------------------------------------------------------------------
 
-name: Deploy on Web Server
+name: Release
 
 on:
   # Manueller Start über GitHub Actions UI
   workflow_dispatch:
+  # Automatischer Start bei Veröffentlichung eines Releases
+  release:
+    types: [published]
+
+concurrency:
+  group: deploy-webserver
+  cancel-in-progress: false
 
 jobs:
   deploy:

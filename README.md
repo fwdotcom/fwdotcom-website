@@ -16,10 +16,19 @@ Die Webseite [www.frankwinter.com](https://www.frankwinter.com) dient als persö
 
 Weitere Details zur Bildkonvertierung und zum Deployment finden sich weiter unten in dieser Datei.
 
-### Deployment auf den Webserver
-Mittels der Action „Deploy on Web Server“ wird die Webseite aus dem Verzeichnis `www/` auf den Webserver beim Webhoster (Webgo) übertragen.
+### Release / Deployment auf den Webserver
+Mittels der Action „Release“ ([`.github/workflows/release.yml`](.github/workflows/release.yml)) wird die Webseite aus dem Verzeichnis `www/` auf den Webserver beim Webhoster (Webgo) übertragen.
 
-#### Benötigte Repository Secrets:
+**Trigger:**
+- **Automatisch:** Bei Veröffentlichung eines GitHub Releases (`release: published`).
+- **Manuell:** Über die GitHub Actions UI (`workflow_dispatch`).
+
+### Continuous Integration (CI)
+Über die Action „CI & Code Quality“ ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) wird bei jedem Push und Pull Request auf den `main`-Branch automatisch geprüft:
+- **JSON-Validierung**: Korrektes Datumsformat (YYYY-MM-DD) und Gültigkeit von `away.json`.
+- **JavaScript**: Syntaxprüfung (`node --check`).
+- **HTML & CSS**: Linting via HTMLHint und Stylelint zur Vermeidung doppelter IDs oder fehlerhafter Styles.
+- **Asset-Integrität**: Stellt sicher, dass alle im Code referenzierten Bilddateien existieren.
 
 | Secret            | Zweck                                     | Ermittlung / Quelle |
 | ----------------- | ----------------------------------------- | ------------------- |
@@ -77,7 +86,7 @@ echo "Done!"
 
 ### Verwaltung der Abwesenheitszeiten (away.json)
 
-Die Datei `away.json` kann über das Admin-Interface unter [`admin/away.php`](www/admin/away.php) gepflegt werden. Sie enthält den Zeitraum, in dem das Abwesenheitsbild angezeigt wird.
+Die Datei [`www/away.json`](www/away.json) wird direkt im Git-Repository gepflegt und enthält den Zeitraum, in dem das Abwesenheitsbild (`clay_frank_backsoon.webp`) angezeigt wird. Bei jedem Push oder Release wird das Format (`YYYY-MM-DD`) durch die CI-Pipeline automatisch validiert und per Release auf den Webserver übertragen.
 
 Beispiel für den Inhalt von `away.json`:
 
