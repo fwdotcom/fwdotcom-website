@@ -105,7 +105,7 @@
 
     async function loadAwayRange() {
         try {
-            const res = await fetch('/away.json', { cache: 'no-store' });
+            const res = await fetch('away.json', { cache: 'no-store' });
             if (!res.ok) return null;
             const data = await res.json();
             if (!data || typeof data.from !== 'string' || typeof data.to !== 'string') return null;
