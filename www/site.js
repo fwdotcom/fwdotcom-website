@@ -1,26 +1,26 @@
 (async function () {
     // =========================================================================
-    // KONFIGURATION: TIMINGS & INTERVALLE (in Millisekunden)
+    // CONFIGURATION: TIMINGS & INTERVALS (in milliseconds)
     // =========================================================================
     
-    // -- Interaktionen --
+    // -- Interactions --
     const TIME_HOLD_RELEASE_DELAY = 500
     const TIME_INTRO_HINT_DELAY = 1000;
     const TIME_INTRO_HINT_DURATION = 1500;
 
-    // -- Dauer des Blinzelns (Basis + Zufall)
+    // -- Blink duration (base + random)
     const TIME_BLINK_CLOSED_BASE = 100;
     const TIME_BLINK_CLOSED_VAR  = 100; 
     
-    // Zeit zwischen zwei Blinzlern (Basis + Zufall)
+    // Time between two blinks (base + random)
     const TIME_BLINK_INTERVAL_BASE = 2000;
     const TIME_BLINK_INTERVAL_VAR  = 2000;
 
-    // Dauer der Variantenanzeige (Basis + Zufall)
+    // Variant display duration (base + random)
     const TIME_VARIANT_SHOW_BASE = 500;
     const TIME_VARIANT_SHOW_VAR  = 1000;
     
-    // Zeit zwischen zwei Varianten (Basis + Zufall)
+    // Time between two variants (base + random)
     const TIME_VARIANT_INTERVAL_BASE = 3000;
     const TIME_VARIANT_INTERVAL_VAR  = 3000;
     
@@ -31,7 +31,7 @@
 
 
     // =========================================================================
-    // HAUPTLOGIK
+    // MAIN LOGIC
     // =========================================================================
 
     const portrait = document.getElementById('frank-portrait');
