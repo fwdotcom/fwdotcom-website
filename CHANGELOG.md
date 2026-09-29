@@ -7,6 +7,11 @@ und dieses Projekt hält sich an [Semantic Versioning](https://semver.org/spec/v
 
 ---
 
+## [1.0.1] - 2026-09-29
+
+### Hinzugefügt (Added)
+- Zweite Beschreibungszeile unter dem Intro-Text mit aktuellen Projekten ergänzt.
+
 ## [1.0.0] - 2026-09-12
 
 ### Initiales Release der Webseite www.frankwinter.com
