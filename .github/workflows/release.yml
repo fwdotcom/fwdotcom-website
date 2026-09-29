@@ -1,35 +1,42 @@
 # -----------------------------------------------------------------------------
-# Release-Workflow zum Deployment auf den Web Server
+# Release workflow for deployment to GitHub Pages
 #
-# Eigenschaften:
-# - Trigger: manuell (workflow_dispatch) oder bei Release-Veröffentlichung (release: published)
-# - Quelle: lokales Verzeichnis "www/"
-# - Ziel: festes Server-Verzeichnis (Secret: DEPLOY_PATH)
-# - Übertragung: rsync über SSH
-# - Synchronisationsmodus: 1:1 Spiegelung (inkl. Löschung entfernter Dateien)
+# Properties:
+# - Trigger: manual (workflow_dispatch) or on release publication (release: published)
+# - Source: local directory "www/"
+# - Target: GitHub Pages of this repository
 #
-# WICHTIG:
-# - DEPLOY_PATH darf ausschließlich für diese Webseite verwendet werden
-# - Durch --delete werden serverseitig Dateien gelöscht, die im Repo nicht mehr existieren
+# IMPORTANT:
+# - Repository settings → Pages → Source must be set to "GitHub Actions"
+# - A custom domain is configured in the Pages settings, not via a CNAME file
 # -----------------------------------------------------------------------------
 
-name: Release
+name: Deploy to GitHub Pages
 
 on:
-  # Manueller Start über GitHub Actions UI
+  # Manual start via GitHub Actions UI
   workflow_dispatch:
-  # Automatischer Start bei Veröffentlichung eines Releases
+  # Automatic start when a release is published
   release:
     types: [published]
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 concurrency:
-  group: deploy-webserver
+  group: deploy-pages
   cancel-in-progress: false
 
 jobs:
   deploy:
-    # GitHub-hosted Linux Runner
+    # GitHub-hosted Linux runner
     runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     # Opt into Node.js 24 for actions
     env:
@@ -37,59 +44,37 @@ jobs:
 
     steps:
       # -----------------------------------------------------------------------
-      # Repository auschecken
+      # Check out repository
       # -----------------------------------------------------------------------
       - name: Checkout
         uses: actions/checkout@v4
 
       # -----------------------------------------------------------------------
-      # SSH-Konfiguration für den rsync-Deploy
-      #
-      # Erforderliche Secrets:
-      # - SSH_PRIVATE_KEY  : privater Schlüssel des Deploy-Users
-      # - SSH_KNOWN_HOSTS  : known_hosts-Eintrag des Zielservers
-      # -----------------------------------------------------------------------
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
-
-      # -----------------------------------------------------------------------
-      # Sicherheitsprüfung: Existenz des Quellverzeichnisses
+      # Safety check: source directory exists
       # -----------------------------------------------------------------------
       - name: Validate source directory (www)
         run: |
           if [ ! -d "www" ]; then
-            echo "Quellverzeichnis 'www' wurde nicht gefunden."
-            echo "Inhalt des Repository-Root:"
+            echo "Source directory 'www' not found."
+            echo "Repository root contents:"
             ls -la
             exit 1
           fi
 
       # -----------------------------------------------------------------------
-      # Deployment per rsync
-      #
-      # Eigenschaften:
-      # - Spiegelung von "www/" in das feste Server-Zielverzeichnis
-      # - --delete entfernt serverseitige Dateien, die lokal nicht mehr existieren
-      #
-      # Erforderliche Secrets:
-      # - SSH_HOST    : Hostname oder IP des Zielservers
-      # - SSH_USER    : Deploy-Benutzer
-      # - SSH_PORT    : SSH-Port (optional, Standard 22)
-      # - DEPLOY_PATH : absolutes Zielverzeichnis auf dem Server
+      # Configure Pages and upload www/ as the Pages artifact
       # -----------------------------------------------------------------------
-      - name: Deploy www/ via rsync (delete enabled)
-        env:
-          HOST: ${{ secrets.SSH_HOST }}
-          USER: ${{ secrets.SSH_USER }}
-          PORT: ${{ secrets.SSH_PORT }}
-          DEST: ${{ secrets.DEPLOY_PATH }}
-        run: |
-          PORT_ARG=""
-          if [ -n "${PORT}" ]; then PORT_ARG="-p ${PORT}"; fi
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
 
-          # Spiegelung von www/ in das feste Server-Zielverzeichnis (inkl. Löschungen)
-          rsync -az --delete -e "ssh ${PORT_ARG}" "www/" "${USER}@${HOST}:${DEST}/"
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: www
+
+      # -----------------------------------------------------------------------
+      # Deploy the uploaded artifact to GitHub Pages
+      # -----------------------------------------------------------------------
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
